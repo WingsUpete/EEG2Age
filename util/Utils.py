@@ -3,6 +3,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+import torch
 
 
 def path2FileNameWithoutExt(path):
@@ -12,6 +13,10 @@ def path2FileNameWithoutExt(path):
     :return: file name without extension
     """
     return os.path.splitext(path)[0]
+
+
+def MAE(y_pred: torch.Tensor, y_true: torch.Tensor):
+    return torch.mean(torch.abs(y_true - y_pred))
 
 
 def trainLog2LossCurve(logfn='train.log'):

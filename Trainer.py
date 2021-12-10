@@ -8,7 +8,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import torch.autograd.profiler as profiler
 
-from util import Logger, plot_grad_flow
+from util import Logger, plot_grad_flow, MAE
 from EEGAgeDataSet import EEGAgeDataSet
 from model import FeedForward
 
@@ -22,14 +22,15 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
           use_gpu=True, gpu_id=Config.GPU_ID_DEFAULT, data_dir=Config.DATA_DIR_DEFAULT, logr=None,
           model=Config.NETWORK_DEFAULT, model_save_dir=Config.MODEL_SAVE_DIR_DEFAULT,
           loss_function=Config.LOSS_FUNC_DEFAULT,
-          feat_dim=Config.FEAT_DIM_DEFAULT, hidden_dim=Config.HIDDEN_DIM_DEFAULT):
+          feat_dim=Config.FEAT_DIM_DEFAULT, hidden_dim=Config.HIDDEN_DIM_DEFAULT,
+          folds=Config.FOLDS_DEFAULT, kid=Config.VALID_K_DEFAULT):
     # CUDA if possible
     device = torch.device('cuda:%d' % gpu_id if (use_gpu and torch.cuda.is_available()) else 'cpu')
     logr.log('> device: {}\n'.format(device))
 
     # Load DataSet
     logr.log('> Loading DataSet from {}\n'.format(data_dir))
-    dataset = EEGAgeDataSet(data_dir)
+    dataset = EEGAgeDataSet(data_dir, folds=folds, valid_k=kid)
     trainloader = DataLoader(dataset.train_set, batch_size=bs, shuffle=True, num_workers=num_workers)
     validloader = DataLoader(dataset.valid_set, batch_size=bs, shuffle=False, num_workers=num_workers)
     logr.log('> Training batches: {}, Validation batches: {}\n'.format(len(trainloader), len(validloader)))
@@ -65,6 +66,7 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
     # Summarize Info
     logr.log('\nlearning_rate = {}, epochs = {}, num_workers = {}\n'.format(lr, ep, num_workers))
     logr.log('eval_freq = {}, batch_size = {}, optimizer = {}\n'.format(eval_freq, bs, opt))
+    logr.log('folds = {}, valid_fold_id = {}\n'.format(folds, kid))
 
     # Start Training
     logr.log('\nStart Training!\n')
@@ -75,6 +77,7 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
         # train one round
         net.train()
         train_loss = 0
+        train_mae = 0
         time_start_train = time.time()
         for i, batch in enumerate(trainloader):
             if device.type == 'cuda':
@@ -109,23 +112,25 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
 
             with torch.no_grad():
                 train_loss += loss.item()
-                # TODO: metrics
+                train_mae += MAE(res, target)
 
-            if Config.TRAIN_JUST_ONE_BATCH: # DEBUG
+            if Config.TRAIN_JUST_ONE_BATCH:     # DEBUG
                 if i == 0:
                     break
 
         train_loss /= len(trainloader)
+        train_mae /= len(trainloader)
         time_end_train = time.time()
         total_train_time = (time_end_train - time_start_train)
         train_time_per_sample = total_train_time / len(dataset.train_set)
-        logr.log('Training Round %d: loss = %.6f, time_cost = %.4f sec (%.4f sec per sample)\n' %
-                 (epoch_i + 1, train_loss, total_train_time, train_time_per_sample))
+        logr.log('Training Round %d: loss = %.6f, time_cost = %.4f sec (%.4f sec per sample), MAE = %.4f\n' %
+                 (epoch_i + 1, train_loss, total_train_time, train_time_per_sample, train_mae))
 
         # eval_freq: Evaluate on validation set
         if (epoch_i + 1) % eval_freq == 0:
             net.eval()
-            val_loss_total = 0
+            val_mae = 0
+            val_loss = 0
             with torch.no_grad():
                 for j, val_batch in enumerate(validloader):
                     if device.type == 'cuda':
@@ -139,16 +144,17 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
                     val_res = net(val_features)
 
                     val_loss = criterion(val_res, val_target)
-                    
-                    val_loss_total += val_loss.item()
-                    # TODO: metrics
 
-                val_loss_total /= len(validloader)
-                logr.log('!!! Validation: loss = %.6f\n' % val_loss_total)
+                    val_loss += val_loss.item()
+                    val_mae += MAE(val_res, val_target)
+
+                val_loss /= len(validloader)
+                val_mae /= len(validloader)
+                logr.log('!!! Validation: loss = %.6f, MAE = %.4f\n' % (val_loss, val_mae))
 
                 # Save model if we have better validation results
-                if val_loss_total < min_eval_loss:
-                    min_eval_loss = val_loss_total
+                if val_loss < min_eval_loss:
+                    min_eval_loss = val_loss
                     model_path = os.path.join(model_save_dir, '{}.pth'.format(logr.time_tag))
                     torch.save(net, model_path)
                     logr.log('Model: {} has been saved since it achieves smaller loss.\n'.format(model_path))
@@ -161,9 +167,27 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
     logr.log('> Training finished.\n')
 
 
+def evalMetrics(dataloader: DataLoader, device: torch.device, net):
+    mae = 0
+    for j, batch in enumerate(dataloader):
+        if device.type == 'cuda':
+            torch.cuda.empty_cache()
+
+        features, target = batch['features'], batch['target']
+        if device:
+            features = features.to(device)
+            target = target.to(device)
+
+        res = net(features)
+        mae += MAE(res, target)
+    mae /= len(dataloader)
+    return mae
+
+
 def evaluate(model_path, bs=Config.BATCH_SIZE_DEFAULT, num_workers=Config.WORKERS_DEFAULT,
              use_gpu=True, gpu_id=Config.GPU_ID_DEFAULT,
-             data_dir=Config.DATA_DIR_DEFAULT, logr=None):
+             data_dir=Config.DATA_DIR_DEFAULT, logr=None,
+             folds=Config.FOLDS_DEFAULT, kid=Config.VALID_K_DEFAULT):
     # CUDA if needed
     device = torch.device('cuda:%d' % gpu_id if (use_gpu and torch.cuda.is_available()) else 'cpu')
     logr.log('> device: {}\n'.format(device))
@@ -178,14 +202,21 @@ def evaluate(model_path, bs=Config.BATCH_SIZE_DEFAULT, num_workers=Config.WORKER
 
     # Load DataSet
     logr.log('> Loading DataSet from {}\n'.format(data_dir))
-    dataset = EEGAgeDataSet(data_dir)
+    dataset = EEGAgeDataSet(data_dir, folds=folds, valid_k=kid)
     validloader = DataLoader(dataset.valid_set, batch_size=bs, shuffle=False, num_workers=num_workers)
     testloader = DataLoader(dataset.test_set, batch_size=bs, shuffle=False, num_workers=num_workers)
     logr.log('> Validation batches: {}, Test batches: {}\n'.format(len(validloader), len(testloader)))
 
     # Evaluate
     net.eval()
-    # TODO: metrics
+
+    # - Validation
+    val_mae = evalMetrics(validloader, device, net)
+    logr.log('Validation MAE = %.4f\n' % val_mae)
+
+    # - Test
+    test_mae = evalMetrics(testloader, device, net)
+    logr.log('Test MAE = %.4f\n' % test_mae)
 
     # End Evaluation
     logr.log('> Evaluation finished.\n')
@@ -216,6 +247,8 @@ if __name__ == '__main__':
     parser.add_argument('-fd', '--feature_dim', type=int, default=Config.FEAT_DIM_DEFAULT, help='Specify the feature dimension, default = {}'.format(Config.FEAT_DIM_DEFAULT))
     parser.add_argument('-hd', '--hidden_dim', type=int, default=Config.HIDDEN_DIM_DEFAULT, help='Specify the hidden dimension, default = {}'.format(Config.HIDDEN_DIM_DEFAULT))
     parser.add_argument('-lf', '--loss_function', type=str, default=Config.LOSS_FUNC_DEFAULT, help='Specify which loss function to use, default = {}'.format(Config.LOSS_FUNC_DEFAULT))
+    parser.add_argument('-f', '--folds', type=int, default=Config.FOLDS_DEFAULT, help='Number of folds, default = {}'.format(Config.FOLDS_DEFAULT))
+    parser.add_argument('-k', '--k_id', type=int, default=Config.VALID_K_DEFAULT, help='Fold number k (index) used for validation, default = {}'.format(Config.VALID_K_DEFAULT))
 
     FLAGS, unparsed = parser.parse_known_args()
 
@@ -229,7 +262,8 @@ if __name__ == '__main__':
               use_gpu=(FLAGS.gpu == 1), gpu_id=FLAGS.gpu_id, data_dir=FLAGS.data_dir, logr=logger,
               model=FLAGS.network, model_save_dir=FLAGS.model_save_dir,
               loss_function=FLAGS.loss_function,
-              feat_dim=FLAGS.feature_dim, hidden_dim=FLAGS.hidden_dim)
+              feat_dim=FLAGS.feature_dim, hidden_dim=FLAGS.hidden_dim,
+              folds=FLAGS.folds, kid=FLAGS.k_id)
         logger.close()
     elif working_mode == 'eval':
         eval_file = FLAGS.eval
@@ -241,7 +275,8 @@ if __name__ == '__main__':
         # Normal
         evaluate(eval_file, bs=FLAGS.batch_size, num_workers=FLAGS.cores,
                  use_gpu=(FLAGS.gpu == 1), gpu_id=FLAGS.gpu_id,
-                 data_dir=FLAGS.data_dir, logr=logger)
+                 data_dir=FLAGS.data_dir, logr=logger,
+                 folds=FLAGS.folds, kid=FLAGS.k_id)
         logger.close()
     else:
         sys.stderr.write('Please specify the working mode (train/eval)\n')

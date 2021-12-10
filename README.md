@@ -17,11 +17,35 @@ xxx
 
 ## Model
 
+### Our Model
+
 xxx
+
+### Baseline
+
+We use a simple **feed-forward neural network** which contains only two linear layers as the baseline model.
+
+The structure for the baseline model can be summarized as follows:
+```text
+[Linear(in_features=in_dim, out_features=hidden_dim, bias=True),
+Linear(in_features=hidden_dim, out_features=out_dim, bias=True)];
+```
+where `out_dim = 1`.
+
+### Other Models
+
+1. xxx
+2. xxx
+
+### Variants
+
+1. xxx
 
 <br>
 
 ## Experiment
+
+For metrics, we use MAE (Mean Absolute Error) to evaluate the model performance.
 
 xxx
 
