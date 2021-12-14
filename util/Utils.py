@@ -19,6 +19,21 @@ def MAE(y_pred: torch.Tensor, y_true: torch.Tensor):
     return torch.mean(torch.abs(y_true - y_pred))
 
 
+def RMSE(y_pred: torch.Tensor, y_true: torch.Tensor):
+    return torch.sqrt(torch.mean(torch.pow(y_true - y_pred, 2)))
+
+
+def MAPE(y_pred: torch.Tensor, y_true: torch.Tensor):
+    return torch.mean(torch.abs((y_true - y_pred) / (y_true + 1)))
+
+
+METRICS_FUNCTION_MAP = {
+    'MAE': MAE,
+    'RMSE': RMSE,
+    'MAPE': MAPE
+}
+
+
 def trainLog2LossCurve(logfn='train.log'):
     if not os.path.isfile(logfn):
         print('{} is not a valid file.'.format(logfn))
