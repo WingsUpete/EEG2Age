@@ -8,7 +8,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import torch.autograd.profiler as profiler
 
-from util import Logger, plot_grad_flow, MAE
+from util import Logger, plot_grad_flow, MAE, RMSE, MAPE, METRICS_FUNCTION_MAP, constructMetricsStorage, aggMetricsWithMap, wrapMetricsWithMap, metricsMap2Str
 from EEGAgeDataSet import EEGAgeDataSet
 from model import FeedForward
 
@@ -77,7 +77,7 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
         # train one round
         net.train()
         train_loss = 0
-        train_mae = 0
+        train_metrics = constructMetricsStorage()
         time_start_train = time.time()
         for i, batch in enumerate(trainloader):
             if device.type == 'cuda':
@@ -112,24 +112,24 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
 
             with torch.no_grad():
                 train_loss += loss.item()
-                train_mae += MAE(res, target)
+                train_metrics = aggMetricsWithMap(train_metrics, res, target)
 
             if Config.TRAIN_JUST_ONE_BATCH:     # DEBUG
                 if i == 0:
                     break
 
         train_loss /= len(trainloader)
-        train_mae /= len(trainloader)
+        train_metrics = wrapMetricsWithMap(train_metrics, len(trainloader))
         time_end_train = time.time()
         total_train_time = (time_end_train - time_start_train)
         train_time_per_sample = total_train_time / len(dataset.train_set)
-        logr.log('Training Round %d: loss = %.6f, time_cost = %.4f sec (%.4f sec per sample), MAE = %.4f\n' %
-                 (epoch_i + 1, train_loss, total_train_time, train_time_per_sample, train_mae))
+        logr.log('Training Round %d: loss = %.6f, time_cost = %.4f sec (%.4f sec per sample), %s\n' %
+                 (epoch_i + 1, train_loss, total_train_time, train_time_per_sample, metricsMap2Str(train_metrics)))
 
         # eval_freq: Evaluate on validation set
         if (epoch_i + 1) % eval_freq == 0:
             net.eval()
-            val_mae = 0
+            val_metrics = constructMetricsStorage()
             val_loss = 0
             with torch.no_grad():
                 for j, val_batch in enumerate(validloader):
@@ -146,11 +146,11 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
                     val_loss = criterion(val_res, val_target)
 
                     val_loss += val_loss.item()
-                    val_mae += MAE(val_res, val_target)
+                    val_metrics = aggMetricsWithMap(val_metrics, val_res, val_target)
 
                 val_loss /= len(validloader)
-                val_mae /= len(validloader)
-                logr.log('!!! Validation: loss = %.6f, MAE = %.4f\n' % (val_loss, val_mae))
+                val_metrics = wrapMetricsWithMap(val_metrics, len(validloader))
+                logr.log('!!! Validation: loss = %.6f, %s\n' % (val_loss, metricsMap2Str(val_metrics)))
 
                 # Save model if we have better validation results
                 if val_loss < min_eval_loss:
@@ -168,7 +168,7 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
 
 
 def evalMetrics(dataloader: DataLoader, device: torch.device, net):
-    mae = 0
+    metrics = constructMetricsStorage()
     for j, batch in enumerate(dataloader):
         if device.type == 'cuda':
             torch.cuda.empty_cache()
@@ -179,9 +179,9 @@ def evalMetrics(dataloader: DataLoader, device: torch.device, net):
             target = target.to(device)
 
         res = net(features)
-        mae += MAE(res, target)
-    mae /= len(dataloader)
-    return mae
+        metrics = aggMetricsWithMap(metrics, res, target)
+    metrics = wrapMetricsWithMap(metrics, len(dataloader))
+    return metrics
 
 
 def evaluate(model_path, bs=Config.BATCH_SIZE_DEFAULT, num_workers=Config.WORKERS_DEFAULT,
@@ -211,12 +211,12 @@ def evaluate(model_path, bs=Config.BATCH_SIZE_DEFAULT, num_workers=Config.WORKER
     net.eval()
 
     # - Validation
-    val_mae = evalMetrics(validloader, device, net)
-    logr.log('Validation MAE = %.4f\n' % val_mae)
+    val_metrics = evalMetrics(validloader, device, net)
+    logr.log('Validation: %s\n' % metricsMap2Str(val_metrics))
 
     # - Test
-    test_mae = evalMetrics(testloader, device, net)
-    logr.log('Test MAE = %.4f\n' % test_mae)
+    test_metrics = evalMetrics(testloader, device, net)
+    logr.log('Test: %s\n' % metricsMap2Str(test_metrics))
 
     # End Evaluation
     logr.log('> Evaluation finished.\n')

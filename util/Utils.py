@@ -20,11 +20,15 @@ def MAE(y_pred: torch.Tensor, y_true: torch.Tensor):
 
 
 def RMSE(y_pred: torch.Tensor, y_true: torch.Tensor):
-    return torch.sqrt(torch.mean(torch.pow(y_true - y_pred, 2)))
+    # return torch.sqrt(torch.mean(torch.pow(y_true - y_pred, 2)))  # sqrt should be outside
+    return torch.mean(torch.pow(y_true - y_pred, 2))
+
+
+ADDITIVE = 1e-10
 
 
 def MAPE(y_pred: torch.Tensor, y_true: torch.Tensor):
-    return torch.mean(torch.abs((y_true - y_pred) / (y_true + 1)))
+    return torch.mean(torch.abs((y_true - y_pred) / (y_true + ADDITIVE)))
 
 
 METRICS_FUNCTION_MAP = {
@@ -32,6 +36,35 @@ METRICS_FUNCTION_MAP = {
     'RMSE': RMSE,
     'MAPE': MAPE
 }
+
+
+def constructMetricsStorage():
+    metrics_map = {}
+    for metrics in METRICS_FUNCTION_MAP:
+        metrics_map[metrics] = 0
+    return metrics_map
+
+
+def aggMetricsWithMap(metrics_map, res, target):
+    for metrics in metrics_map:
+        metrics_map[metrics] += METRICS_FUNCTION_MAP[metrics](res, target).item()
+
+    return metrics_map
+
+
+def wrapMetricsWithMap(metrics_map, nBatch):
+    for metrics in metrics_map:
+        metrics_map[metrics] /= nBatch
+        if metrics == 'RMSE':
+            metrics_map[metrics] = torch.sqrt(metrics_map[metrics])
+
+    return metrics_map
+
+
+def metricsMap2Str(metrics_map):
+    output = ['%s = %.4f' % (metrics, metrics_map[metrics]) for metrics in metrics_map]
+    output = ', '.join(output)
+    return output
 
 
 def trainLog2LossCurve(logfn='train.log'):
