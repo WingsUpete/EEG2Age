@@ -12,7 +12,7 @@ def path2FileNameWithoutExt(path):
     :param path: file path
     :return: file name without extension
     """
-    return os.path.splitext(path)[0]
+    return os.path.splitext(os.path.basename(path))[0]
 
 
 def MAE(y_pred: torch.Tensor, y_true: torch.Tensor):
