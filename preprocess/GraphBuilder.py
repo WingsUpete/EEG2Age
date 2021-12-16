@@ -64,7 +64,7 @@ def matOD2G(mat, oList: list, dList: list, nGNodes):
 def procData(data_path, out_dir, scale=DATA_SCALE, sample_split=4):
     # Read and scale data
     df = pd.read_csv(data_path)
-    ts_df = torch.tensor(df.values)
+    ts_df = torch.tensor(df.values).float()
     ts_df *= scale
 
     # Calculate Pearson Correlation Coefficient
