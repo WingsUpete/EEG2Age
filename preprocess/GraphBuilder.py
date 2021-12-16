@@ -56,7 +56,7 @@ def matOD2G(mat, oList: list, dList: list, nGNodes):
 
     # Create DGL Graph
     graph = dgl.graph((oList, dList), num_nodes=nGNodes)
-    graph.edata['pre_w'] = torch.Tensor(edges)
+    graph.edata['pre_w'] = torch.Tensor(edges).reshape(-1, 1, 1)
 
     return graph
 

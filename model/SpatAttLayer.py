@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 
 import torch
 import torch.nn as nn
@@ -74,9 +75,10 @@ if __name__ == '__main__':
     features = pack['V']
     (graph,), _ = dgl.load_graphs('../preprocess/data/graph.dgl')
     graph.ndata['v'] = features
-    graph.edata['pre_w'] = graph.edata['pre_w'].reshape(-1, 1, 1)
+    graph.edata['pre_w'] = graph.edata['pre_w']
 
     spat = SpatAttLayer(feat_dim=1, hidden_dim=1, num_nodes=features.shape[-3], num_heads=3, gate=True, merge='mean')
 
+    time0 = time.time()
     out = spat(graph)
-    print(out)
+    print(out, time.time() - time0, 'sec')
