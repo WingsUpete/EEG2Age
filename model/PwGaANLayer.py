@@ -5,10 +5,12 @@ import torch.nn.functional as F
 
 
 class PwGaANLayer(nn.Module):
-    def __init__(self, in_dim, out_dim, num_heads=1, gate=False):
+    def __init__(self, in_dim, out_dim, num_nodes, num_heads=1, gate=False):
         super(PwGaANLayer, self).__init__()
         self.in_dim = in_dim
         self.out_dim = out_dim
+
+        self.num_nodes = num_nodes
 
         self.num_heads = num_heads
 
@@ -88,15 +90,15 @@ class PwGaANLayer(nn.Module):
 
             # Message Passing
             g.update_all(self.message_func, self.reduce_func)
-            return (g.ndata['proj_z'] + g.ndata['h']).reshape(self.num_heads, int(g.batch_size / self.num_heads), -1, self.out_dim)
+            return (g.ndata['proj_z'] + g.ndata['h']).reshape(self.num_heads, int(g.batch_size / self.num_heads), self.num_nodes, -1, self.out_dim)
 
 
 class MultiHeadPwGaANLayer(nn.Module):
-    def __init__(self, in_dim, out_dim, num_heads, merge='cat', gate=False):
+    def __init__(self, in_dim, out_dim, num_nodes, num_heads, merge='cat', gate=False):
         super(MultiHeadPwGaANLayer, self).__init__()
         self.gate = gate
         self.num_heads = num_heads
-        self.pwGaAN = PwGaANLayer(in_dim, out_dim, num_heads=self.num_heads, gate=self.gate)
+        self.pwGaAN = PwGaANLayer(in_dim, out_dim, num_nodes=num_nodes, num_heads=self.num_heads, gate=self.gate)
         self.merge = merge
 
     def forward(self, g: dgl.DGLGraph):
@@ -104,8 +106,8 @@ class MultiHeadPwGaANLayer(nn.Module):
         head_outs = self.pwGaAN(batch_g)
         del batch_g
         if self.merge == 'cat':
-            return head_outs.permute(1, 2, 0, 3).reshape(head_outs.shape[-3], head_outs.shape[-2], -1)
+            return head_outs.permute(1, 2, 3, 0, 4).reshape(head_outs.shape[-4], head_outs.shape[-3], head_outs.shape[-2], -1)
         elif self.merge == 'mean':
             return torch.mean(head_outs, dim=0)
         else:
-            return head_outs.permute(1, 2, 0, 3).reshape(head_outs.shape[-3], head_outs.shape[-2], -1)  # Default: cat
+            return head_outs.permute(1, 2, 3, 0, 4).reshape(head_outs.shape[-4], head_outs.shape[-3], head_outs.shape[-2], -1)  # Default: cat

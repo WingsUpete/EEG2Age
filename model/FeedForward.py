@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 
 
@@ -15,3 +16,9 @@ class FeedForward(nn.Module):
         z = self.linear_z(h)
         del h
         return z
+
+
+if __name__ == '__main__':
+    pack = torch.load('../preprocess/data/1.pt')
+    features = pack['V']
+    features = features.reshape(features.shape[0], features.shape[1]).transpose(0, 1)

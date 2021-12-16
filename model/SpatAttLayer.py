@@ -1,30 +1,38 @@
-import numpy as np
-import dgl
+import os
+import sys
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+stderr = sys.stderr
+sys.stderr = open(os.devnull, 'w')
+import dgl
+sys.stderr.close()
+sys.stderr = stderr
 
 from .PwGaANLayer import MultiHeadPwGaANLayer
 
 
 class SpatAttLayer(nn.Module):
-    def __init__(self, feat_dim, hidden_dim, num_heads, gate=False, merge='mean'):
+    def __init__(self, feat_dim, hidden_dim, num_nodes, num_heads, gate=False, merge='mean'):
         super(SpatAttLayer, self).__init__()
         self.feat_dim = feat_dim
         self.hidden_dim = hidden_dim
+        self.num_nodes = num_nodes
         self.num_heads = num_heads
         self.gate = gate
         self.merge = merge
 
-        self.GaANBlk = MultiHeadPwGaANLayer(self.feat_dim, self.hidden_dim, self.num_heads, gate=self.gate, merge=self.merge)
+        self.GaANBlk = MultiHeadPwGaANLayer(self.feat_dim, self.hidden_dim, self.num_nodes, self.num_heads, merge=self.merge, gate=self.gate)
         self.proj_fc = nn.Linear(self.feat_dim, self.hidden_dim, bias=False)
 
         # BatchNorm
-        self.bn = nn.BatchNorm1d(num_features=self.hidden_dim * 2)
+        self.bn = nn.BatchNorm2d(num_features=self.hidden_dim * 2)
         if self.merge == 'mean':
-            self.bn = nn.BatchNorm1d(num_features=self.hidden_dim * 2)
+            self.bn = nn.BatchNorm2d(num_features=self.hidden_dim * 2)
         elif self.merge == 'cat':
-            self.bn = nn.BatchNorm1d(num_features=self.hidden_dim * (self.num_heads + 1))
+            self.bn = nn.BatchNorm2d(num_features=self.hidden_dim * (self.num_heads + 1))
 
         self.reset_parameters()
 
@@ -43,7 +51,7 @@ class SpatAttLayer(nn.Module):
 
         g.ndata['proj_z'] = proj_feat
 
-        out_proj_feat = proj_feat.reshape(g.batch_size, -1, self.hidden_dim)
+        out_proj_feat = proj_feat.reshape(g.batch_size, int(g.num_nodes() / g.batch_size), -1, self.hidden_dim)
         del proj_feat
 
         hg = self.GaANBlk(g)
@@ -52,10 +60,22 @@ class SpatAttLayer(nn.Module):
         del out_proj_feat
         del hg
 
-        normH = self.bn(torch.transpose(h, -2, -1))
-        reshapedH = torch.transpose(normH, -2, -1)
+        normH = self.bn(torch.transpose(h, -3, -1))
+        reshapedH = torch.transpose(normH, -3, -1)
         del h
         del normH
 
         return reshapedH
 
+
+if __name__ == '__main__':
+    pack = torch.load('../preprocess/data/1.pt')
+    features = pack['V']
+    (graph,), _ = dgl.load_graphs('../preprocess/data/graph.dgl')
+    graph.ndata['v'] = features
+    graph.edata['pre_w'] = graph.edata['pre_w'].reshape(-1, 1, 1)
+
+    spat = SpatAttLayer(feat_dim=1, hidden_dim=1, num_nodes=features.shape[-3], num_heads=3, gate=True, merge='mean')
+
+    out = spat(graph)
+    print(out)
