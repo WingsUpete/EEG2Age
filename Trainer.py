@@ -10,7 +10,7 @@ import torch.autograd.profiler as profiler
 
 from util import Logger, plot_grad_flow, MAE, RMSE, MAPE, METRICS_FUNCTION_MAP, constructMetricsStorage, aggMetricsWithMap, wrapMetricsWithMap, metricsMap2Str
 from EEGAgeDataSet import EEGAgeDataSet
-from model import FeedForward
+from model import FeedForward, BrainAgePredictionModel
 
 import Config
 if Config.CHECK_GRADS:
@@ -36,10 +36,12 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
     logr.log('> Training batches: {}, Validation batches: {}\n'.format(len(trainloader), len(validloader)))
 
     # Initialize the Model
-    net = FeedForward(in_dim=feat_dim, hidden_dim=hidden_dim)
+    net = BrainAgePredictionModel(feat_dim=feat_dim, hidden_dim=hidden_dim, num_nodes=Config.NUM_NODES, num_heads=Config.NUM_HEADS_DEFAULT)
     logr.log('> Initializing the Training Model: {}\n'.format(model))
     if model == 'FeedForward':
         net = FeedForward(in_dim=feat_dim, hidden_dim=hidden_dim)
+    elif model == 'BAPM':
+        net = BrainAgePredictionModel(feat_dim=feat_dim, hidden_dim=hidden_dim, num_nodes=Config.NUM_NODES, num_heads=Config.NUM_HEADS_DEFAULT)
     logr.log('> Model Structure:\n{}\n'.format(net))
     if device:
         net.to(device)
