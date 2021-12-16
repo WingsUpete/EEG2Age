@@ -69,6 +69,7 @@ class SpatAttLayer(nn.Module):
 
 
 if __name__ == '__main__':
+    # Before testing, remove dot ('.') in the import specification
     pack = torch.load('../preprocess/data/1.pt')
     features = pack['V']
     (graph,), _ = dgl.load_graphs('../preprocess/data/graph.dgl')
