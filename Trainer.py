@@ -39,7 +39,7 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
     net = BrainAgePredictionModel(feat_dim=feat_dim, hidden_dim=hidden_dim, num_nodes=Config.NUM_NODES, num_heads=Config.NUM_HEADS_DEFAULT)
     logr.log('> Initializing the Training Model: {}\n'.format(model))
     if model == 'FeedForward':
-        net = FeedForward(in_dim=feat_dim, hidden_dim=hidden_dim)
+        net = FeedForward(num_channels=Config.NUM_NODES, num_timestamps=Config.NUM_TIMESTAMPS)
     elif model == 'BAPM':
         net = BrainAgePredictionModel(feat_dim=feat_dim, hidden_dim=hidden_dim, num_nodes=Config.NUM_NODES, num_heads=Config.NUM_HEADS_DEFAULT)
     logr.log('> Model Structure:\n{}\n'.format(net))
