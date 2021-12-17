@@ -36,7 +36,9 @@ class BrainAgePredictionModel(nn.Module):
         # Transfer Attention Layer
         self.tranAttLayer = TranLayer(embed_dim=self.temp_embed_dim, num_nodes=self.num_nodes)
 
-    def forward(self, g: dgl.DGLGraph):
+    def forward(self, inputs: dict):
+        g: dgl.DGLGraph = inputs['graph']
+
         spatFeat = self.spatAttLayer(g)
 
         spatTempFeat = self.tempAttLayer(spatFeat)
@@ -50,12 +52,16 @@ class BrainAgePredictionModel(nn.Module):
 
 if __name__ == '__main__':
     # Before testing, remove dot ('.') in the import specification
-    pack = torch.load('../preprocess/data/1.pt')
+    pack = torch.load('../data/EEG_age_data/1.pt')
     features = pack['V']
-    (graph,), _ = dgl.load_graphs('../preprocess/data/graph.dgl')
+    (graph,), _ = dgl.load_graphs('../data/EEG_age_data/graph.dgl')
     graph.ndata['v'] = features
+    inputs = {
+        'features': features,
+        'graph': graph
+    }
 
     bapm = BrainAgePredictionModel(feat_dim=1, hidden_dim=1, num_nodes=features.shape[-3], num_heads=3)
     time0 = time.time()
-    out = bapm(graph)
+    out = bapm(inputs)
     print(out, time.time() - time0, 'sec')

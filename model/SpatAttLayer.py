@@ -71,9 +71,9 @@ class SpatAttLayer(nn.Module):
 
 if __name__ == '__main__':
     # Before testing, remove dot ('.') in the import specification
-    pack = torch.load('../preprocess/data/1.pt')
+    pack = torch.load('../data/EEG_age_data/1.pt')
     features = pack['V']
-    (graph,), _ = dgl.load_graphs('../preprocess/data/graph.dgl')
+    (graph,), _ = dgl.load_graphs('../data/EEG_age_data/graph.dgl')
     graph.ndata['v'] = features
 
     spat = SpatAttLayer(feat_dim=1, hidden_dim=1, num_nodes=features.shape[-3], num_heads=3, gate=True, merge='mean')

@@ -85,7 +85,7 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
             if device.type == 'cuda':
                 torch.cuda.empty_cache()
 
-            features, target = batch['features'], batch['target']
+            features, target = batch['inputs'], batch['target']
             if device:
                 features = features.to(device)
                 target = target.to(device)
@@ -138,7 +138,7 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
                     if device.type == 'cuda':
                         torch.cuda.empty_cache()
 
-                    val_features, val_target = val_batch['features'], val_batch['target']
+                    val_features, val_target = val_batch['inputs'], val_batch['target']
                     if device:
                         val_features = val_features.to(device)
                         val_target = val_target.to(device)
@@ -175,7 +175,7 @@ def evalMetrics(dataloader: DataLoader, device: torch.device, net):
         if device.type == 'cuda':
             torch.cuda.empty_cache()
 
-        features, target = batch['features'], batch['target']
+        features, target = batch['inputs'], batch['target']
         if device:
             features = features.to(device)
             target = target.to(device)
