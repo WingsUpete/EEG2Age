@@ -56,12 +56,12 @@ if __name__ == '__main__':
     features = pack['V']
     (graph,), _ = dgl.load_graphs('../data/EEG_age_data/graph.dgl')
     graph.ndata['v'] = features
-    inputs = {
+    ins = {
         'features': features,
         'graph': graph
     }
 
     bapm = BrainAgePredictionModel(feat_dim=1, hidden_dim=1, num_nodes=features.shape[-3], num_heads=3)
     time0 = time.time()
-    out = bapm(inputs)
+    out = bapm(ins)
     print(out, time.time() - time0, 'sec')
