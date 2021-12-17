@@ -8,9 +8,9 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import torch.autograd.profiler as profiler
 
-from util import Logger, plot_grad_flow, MAE, RMSE, MAPE, METRICS_FUNCTION_MAP, constructMetricsStorage, aggMetricsWithMap, wrapMetricsWithMap, metricsMap2Str
+from util import Logger, plot_grad_flow, constructMetricsStorage, aggMetricsWithMap, wrapMetricsWithMap, metricsMap2Str
 from EEGAgeDataSet import EEGAgeDataSet
-from model import FeedForward, BrainAgePredictionModel
+from model import FeedForward, GRUNet, BrainAgePredictionModel
 
 import Config
 if Config.CHECK_GRADS:
@@ -30,7 +30,7 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
 
     # Load DataSet
     logr.log('> Loading DataSet from {}\n'.format(data_dir))
-    dataset = EEGAgeDataSet(data_dir, folds=folds, valid_k=kid)
+    dataset = EEGAgeDataSet(data_dir, n_samples=Config.NUM_SAMPLES, folds=folds, valid_k=kid)
     trainloader = DataLoader(dataset.train_set, batch_size=bs, shuffle=True, num_workers=num_workers)
     validloader = DataLoader(dataset.valid_set, batch_size=bs, shuffle=False, num_workers=num_workers)
     logr.log('> Training batches: {}, Validation batches: {}\n'.format(len(trainloader), len(validloader)))
@@ -42,6 +42,8 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
         net = FeedForward(num_channels=Config.NUM_NODES, num_timestamps=Config.NUM_TIMESTAMPS)
     elif model == 'BAPM':
         net = BrainAgePredictionModel(feat_dim=feat_dim, hidden_dim=hidden_dim, num_nodes=Config.NUM_NODES, num_heads=Config.NUM_HEADS_DEFAULT)
+    elif model == 'GRUNet':
+        net = GRUNet(hidden_dim=hidden_dim, num_nodes=Config.NUM_NODES)
     logr.log('> Model Structure:\n{}\n'.format(net))
     if device:
         net.to(device)
