@@ -21,7 +21,7 @@ USE_GPU_DEFAULT = 1
 GPU_ID_DEFAULT = 0
 
 NETWORK_DEFAULT = 'BAPM'
-NETWORKS = ['FeedForward', 'BAPM']          # TODO
+NETWORKS = ['FeedForward', 'BAPM', 'GRUNet']          # TODO
 
 MODE_DEFAULT = 'train'
 EVAL_DEFAULT = 'model_save/eval.pt'   # should be a model file name
