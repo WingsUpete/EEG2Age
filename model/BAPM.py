@@ -54,7 +54,6 @@ if __name__ == '__main__':
     features = pack['V']
     (graph,), _ = dgl.load_graphs('../preprocess/data/graph.dgl')
     graph.ndata['v'] = features
-    graph.edata['pre_w'] = graph.edata['pre_w']
 
     bapm = BrainAgePredictionModel(feat_dim=1, hidden_dim=1, num_nodes=features.shape[-3], num_heads=3)
     time0 = time.time()
