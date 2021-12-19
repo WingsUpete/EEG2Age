@@ -4,6 +4,7 @@ ulimit -n 65535
 ### Preprocess ###
 cd preprocess/
 python GraphBuilder.py -d ../data/EEG_age_data_raw/ -c 4 -s 4 -o ../data/EEG_age_data/
+python GraphCustomizer.py -g ../data/D_lobes.txt -o ../data/
 cd ../
 
 
