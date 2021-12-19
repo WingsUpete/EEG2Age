@@ -61,7 +61,7 @@ def constructCustomizedGraph(customization_path, out_dir):
 if __name__ == '__main__':
     """
         Usage Example:
-        python GraphCustomizer.py -g 'testGraph.txt' -o ./
+        python GraphCustomizer.py -g testGraph.txt -o ./
     """
     parser = argparse.ArgumentParser()
 

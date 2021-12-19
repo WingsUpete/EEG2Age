@@ -90,7 +90,7 @@ def procData(data_path, out_dir, scale=DATA_SCALE, sample_split=4):
         out_path = os.path.join(out_dir, out_fn)
         outPack = {
             'V': samples[i],
-            'target': torch.Tensor([[target]])
+            'target': torch.Tensor([target])
         }
         torch.save(outPack, out_path)
 
