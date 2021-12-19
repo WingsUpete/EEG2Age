@@ -47,4 +47,4 @@ SAMPLE_SPLIT = 4
 EEG_FREQUENCY = 1024
 SHUFFLE_RANDOM_SEED = 666
 
-BAD_SUBJECT_IDS = [12, 15]  # Delete bad samples
+BAD_SUBJECT_IDS = [2, 14, 17, 18, 19, 20, 26, 35, 41, 64, 72]  # Delete bad samples
