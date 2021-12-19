@@ -47,7 +47,7 @@ def constructMetricsStorage():
 
 def aggMetricsWithMap(metrics_map, res, target):
     for metrics in metrics_map:
-        metrics_map[metrics] += METRICS_FUNCTION_MAP[metrics](res, target).item()
+        metrics_map[metrics] += METRICS_FUNCTION_MAP[metrics](res, target)
 
     return metrics_map
 
