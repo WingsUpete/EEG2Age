@@ -164,8 +164,7 @@ class GraphBuilder:
 if __name__ == '__main__':
     """
         Usage Example:
-        python Trainer.py -dr data/xxx -c 4 -m train -net FeedForward
-        python Trainer.py -dr data/xxx -c 4 -m eval -e model_save/xx.pth
+        python GraphBuilder.py -d data_raw/ -c 4 -s 4 -o data/
     """
     parser = argparse.ArgumentParser()
 
