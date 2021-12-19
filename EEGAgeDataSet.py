@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import random
 
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -60,40 +61,74 @@ class EEGAgeDataSetItem(Dataset):
 
 
 class EEGAgeDataSet:
-    def __init__(self, data_dir, n_samples, folds=5, valid_k=-1):
+    def __init__(self, data_dir, n_samples, sample_split=Config.SAMPLE_SPLIT,
+                 folds=Config.FOLDS_DEFAULT, valid_k=Config.VALID_K_DEFAULT):
         self.data_dir = data_dir
         checkPathExistence(self.data_dir)
-        self.n_samples = n_samples
+
+        self.n_samples = n_samples  # total: 1 -> n
+        self.sample_split = sample_split
+        self.bad_samples = self.getBadSamples()
+        self.n_bad_samples = len(self.bad_samples)
+        self.n_valid_samples = self.n_samples - self.n_bad_samples
+
+        # Randomly shuffle the samples
+        random.seed(Config.SHUFFLE_RANDOM_SEED)
+        self.real_sample_map = self.getValidSamples()
+        random.shuffle(self.real_sample_map)
+        random.seed(None)
 
         self.folds = folds
         self.valid_k = valid_k
         checkKFold(self.folds, self.valid_k)
 
-        n_test = int(self.n_samples * 0.2)
-        n_train_valid = self.n_samples - n_test
+        n_test = int(self.n_valid_samples * 0.2)
+        n_train_valid = self.n_valid_samples - n_test
 
+        # Fake IDs which only specify the order
         self.train_set_ids, self.valid_set_ids = self.train_valid_split(n_train_valid)
-        self.test_set_ids = [x + 1 for x in range(n_train_valid, self.n_samples)]
+        self.test_set_ids = [x for x in range(n_train_valid, self.n_valid_samples)]
+        # Find the real id for the sample
+        self.train_set_ids = [self.real_sample_map[train_set_id] for train_set_id in self.train_set_ids]
+        self.valid_set_ids = [self.real_sample_map[valid_set_id] for valid_set_id in self.valid_set_ids]
+        self.test_set_ids = [self.real_sample_map[test_set_id] for test_set_id in self.test_set_ids]
 
         # DataSet
         self.train_set = EEGAgeDataSetItem(data_dir=self.data_dir, data_ids=self.train_set_ids)
         self.valid_set = EEGAgeDataSetItem(data_dir=self.data_dir, data_ids=self.valid_set_ids)
         self.test_set = EEGAgeDataSetItem(data_dir=self.data_dir, data_ids=self.test_set_ids)
 
+    def getBadSamples(self):
+        bad_samples = []
+        for bad_subject_id in Config.BAD_SUBJECT_IDS:
+            for i in range(self.sample_split):
+                bad_samples.append(
+                    (bad_subject_id - 1) * self.sample_split + i + 1
+                )
+        return bad_samples
+
+    def getValidSamples(self):
+        valid_samples = []
+        for i in range(self.n_samples):
+            cur_sample_id = i + 1
+            if cur_sample_id not in self.bad_samples:
+                valid_samples.append(cur_sample_id)
+        return valid_samples
+
     def train_valid_split(self, n_train_valid):
         n_samples_per_fold = int(n_train_valid / self.folds)
         steps = [n_samples_per_fold * i for i in range(self.folds)]
         train, valid = [], []
         for i in range(len(steps) - 1):
-            curFold = [x + 1 for x in range(steps[i], steps[i + 1])]
+            curFold = [x for x in range(steps[i], steps[i + 1])]
             if self.valid_k == i:
                 valid += curFold
             else:
                 train += curFold
         if self.valid_k == self.folds - 1 or self.valid_k == -1:
-            valid += [x + 1 for x in range(steps[-1], n_train_valid)]
+            valid += [x for x in range(steps[-1], n_train_valid)]
         else:
-            train += [x + 1 for x in range(steps[-1], n_train_valid)]
+            train += [x for x in range(steps[-1], n_train_valid)]
 
         return train, valid
 
