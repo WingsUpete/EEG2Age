@@ -60,7 +60,7 @@ class BrainAgePredictionModel(nn.Module):
         pred = self.tranAttLayer(spatTempFeat)
         del spatTempFeat
 
-        return pred * 100
+        return pred * 50
 
 
 if __name__ == '__main__':
