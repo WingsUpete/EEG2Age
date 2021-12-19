@@ -10,12 +10,15 @@ cd ../
 
 ### BAPM ###
 python Trainer.py -dr data/EEG_age_data/ -c 4 -m train -net BAPM
+#python Trainer.py -dr data/EEG_age_data/ -c 4 -m eval -e model_save/20211219_23_35_13.pth
 
 
 
 ##### Baselines #####
 ### FeedForward ###
-python Trainer.py -dr data/EEG_age_data/ -c 4 -m train -net FeedForward
+#python Trainer.py -dr data/EEG_age_data/ -c 4 -m train -net FeedForward
+#python Trainer.py -dr data/EEG_age_data/ -c 4 -m eval -e model_save/xxx.pth
 
 ### GRUNet ###
-python Trainer.py -dr data/EEG_age_data/ -c 4 -m train -net GRUNet
+#python Trainer.py -dr data/EEG_age_data/ -c 4 -m train -net GRUNet
+#python Trainer.py -dr data/EEG_age_data/ -c 4 -m eval -e model_save/xxx.pth

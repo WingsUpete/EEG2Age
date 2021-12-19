@@ -136,3 +136,6 @@ data/
 
 # Test
 /preprocess/testGraph.txt
+
+# Model Save
+model_save/
