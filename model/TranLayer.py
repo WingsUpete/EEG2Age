@@ -12,6 +12,8 @@ class TranLayer(nn.Module):
         self.linear_nodes = nn.Linear(in_features=self.num_nodes, out_features=1, bias=True)
         self.linear_embed = nn.Linear(in_features=self.embed_dim, out_features=1, bias=True)
 
+        self.reset_parameters()
+
     def reset_parameters(self):
         """ Reinitialize learnable parameters. """
         gain = nn.init.calculate_gain('relu')
