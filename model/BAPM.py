@@ -11,6 +11,7 @@ import dgl
 sys.stderr.close()
 sys.stderr = stderr
 
+from .StCNN import StCNN
 from .SpatAttLayer import SpatAttLayer
 from .TempLayer import TempLayer
 from .TranLayer import TranLayer
@@ -24,11 +25,15 @@ class BrainAgePredictionModel(nn.Module):
         self.num_nodes = num_nodes
         self.num_heads = num_heads
 
-        self.spat_embed_dim = 2 * self.hidden_dim   # Embedding dimension after spatial feature extraction
-        self.temp_embed_dim = self.spat_embed_dim   # Embedding dimension after temporal feature extraction
+        self.stC_embed_dim = self.hidden_dim            # Embedding dimension after short-term temporal feature extraction
+        self.spat_embed_dim = 2 * self.stC_embed_dim    # Embedding dimension after spatial feature extraction
+        self.temp_embed_dim = self.spat_embed_dim       # Embedding dimension after temporal feature extraction
+
+        # Short-term Temporal Layer
+        self.stCNN = StCNN(hidden_dim=self.hidden_dim)
 
         # Spatial Attention Layer
-        self.spatAttLayer = SpatAttLayer(feat_dim=self.feat_dim, hidden_dim=self.hidden_dim, num_nodes=self.num_nodes, num_heads=self.num_heads, gate=True, merge='mean')
+        self.spatAttLayer = SpatAttLayer(feat_dim=self.stC_embed_dim, hidden_dim=self.stC_embed_dim, num_nodes=self.num_nodes, num_heads=self.num_heads, gate=True, merge='mean')
 
         # Temporal Attention Layer
         self.tempAttLayer = TempLayer(embed_dim=self.spat_embed_dim, num_nodes=self.num_nodes)
@@ -39,11 +44,19 @@ class BrainAgePredictionModel(nn.Module):
     def forward(self, inputs: dict):
         g: dgl.DGLGraph = inputs['graph']
 
+        # Short-term Temporal
+        feat = g.ndata['v']
+        convFeat = self.stCNN(feat)
+        g.ndata['v'] = convFeat
+
+        # Spatial
         spatFeat = self.spatAttLayer(g)
 
+        # Temporal
         spatTempFeat = self.tempAttLayer(spatFeat)
         del spatFeat
 
+        # Transfer
         pred = self.tranAttLayer(spatTempFeat)
         del spatTempFeat
 
@@ -61,7 +74,7 @@ if __name__ == '__main__':
         'graph': graph
     }
 
-    bapm = BrainAgePredictionModel(feat_dim=1, hidden_dim=1, num_nodes=features.shape[-3], num_heads=3)
+    bapm = BrainAgePredictionModel(feat_dim=1, hidden_dim=2, num_nodes=features.shape[-3], num_heads=3)
     time0 = time.time()
     out = bapm(ins)
     print(out, time.time() - time0, 'sec')
