@@ -4,11 +4,12 @@ import time
 import random
 
 import torch
-from torch.utils.data import Dataset, DataLoader
 
 stderr = sys.stderr
 sys.stderr = open(os.devnull, 'w')
 import dgl
+from dgl.data import DGLDataset
+from dgl.dataloading import GraphDataLoader
 sys.stderr.close()
 sys.stderr = stderr
 
@@ -30,12 +31,15 @@ def checkKFold(folds, k):
         exit(-100)
 
 
-class EEGAgeDataSetItem(Dataset):
+class EEGAgeDataSetItem(DGLDataset):
     def __init__(self, data_dir, data_ids: list):
         self.data_dir = data_dir
         self.data_ids = data_ids
 
         self.graph_path = os.path.join(self.data_dir, 'graph.dgl')
+
+    def process(self):
+        pass
 
     def __len__(self):
         return len(self.data_ids)
@@ -102,9 +106,11 @@ class EEGAgeDataSet:
         bad_samples = []
         for bad_subject_id in Config.BAD_SUBJECT_IDS:
             for i in range(self.sample_split):
-                bad_samples.append(
-                    (bad_subject_id - 1) * self.sample_split + i + 1
-                )
+                cur_bad_sample_id = (bad_subject_id - 1) * self.sample_split + i + 1
+                if cur_bad_sample_id <= self.n_samples:
+                    bad_samples.append(
+                            cur_bad_sample_id
+                    )
         return bad_samples
 
     def getValidSamples(self):
@@ -137,7 +143,7 @@ def evalSamplingSpeed(ds, batch_size, shuffle, tag, num_workers=4):
     """
     Test the sampling functionality & efficiency
     """
-    dataloader = DataLoader(ds, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+    dataloader = GraphDataLoader(ds, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
     time0 = time.time()
 
     for i, batch in enumerate(dataloader):
@@ -149,8 +155,8 @@ def evalSamplingSpeed(ds, batch_size, shuffle, tag, num_workers=4):
 
 
 if __name__ == '__main__':
-    dataset = EEGAgeDataSet(data_dir=Config.DATA_DIR_DEFAULT, n_samples=Config.NUM_SAMPLES, folds=5, valid_k=-1)
-    print(dataset)
-    # evalSamplingSpeed(dataset.train_set, batch_size=5, shuffle=True, tag='Training', num_workers=4)
-    # evalSamplingSpeed(dataset.valid_set, batch_size=3, shuffle=False, tag='Validation', num_workers=4)
-    # evalSamplingSpeed(dataset.test_set, batch_size=3, shuffle=False, tag='Test', num_workers=4)
+    # dataset = EEGAgeDataSet(data_dir=Config.DATA_DIR_DEFAULT, n_samples=Config.NUM_SAMPLES, folds=5, valid_k=-1)
+    dataset = EEGAgeDataSet(data_dir=Config.DATA_DIR_DEFAULT, n_samples=40, folds=5, valid_k=-1)
+    evalSamplingSpeed(dataset.train_set, batch_size=5, shuffle=True, tag='Training', num_workers=4)
+    evalSamplingSpeed(dataset.valid_set, batch_size=3, shuffle=False, tag='Validation', num_workers=4)
+    evalSamplingSpeed(dataset.test_set, batch_size=3, shuffle=False, tag='Test', num_workers=4)

@@ -5,8 +5,14 @@ import time
 
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
 import torch.autograd.profiler as profiler
+
+stderr = sys.stderr
+sys.stderr = open(os.devnull, 'w')
+import dgl
+from dgl.dataloading import GraphDataLoader
+sys.stderr.close()
+sys.stderr = stderr
 
 from util import Logger, plot_grad_flow, constructMetricsStorage, aggMetricsWithMap, wrapMetricsWithMap, metricsMap2Str
 from EEGAgeDataSet import EEGAgeDataSet
@@ -19,7 +25,8 @@ if Config.CHECK_GRADS:
 
 def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Config.MAX_EPOCHS_DEFAULT,
           eval_freq=Config.EVAL_FREQ_DEFAULT, opt=Config.OPTIMIZER_DEFAULT, num_workers=Config.WORKERS_DEFAULT,
-          use_gpu=True, gpu_id=Config.GPU_ID_DEFAULT, data_dir=Config.DATA_DIR_DEFAULT, logr=None,
+          use_gpu=True, gpu_id=Config.GPU_ID_DEFAULT,
+          data_dir=Config.DATA_DIR_DEFAULT, n_data_samples=Config.NUM_SAMPLES, logr=None,
           model=Config.NETWORK_DEFAULT, model_save_dir=Config.MODEL_SAVE_DIR_DEFAULT,
           loss_function=Config.LOSS_FUNC_DEFAULT,
           feat_dim=Config.FEAT_DIM_DEFAULT, hidden_dim=Config.HIDDEN_DIM_DEFAULT,
@@ -30,9 +37,9 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
 
     # Load DataSet
     logr.log('> Loading DataSet from {}\n'.format(data_dir))
-    dataset = EEGAgeDataSet(data_dir, n_samples=Config.NUM_SAMPLES, folds=folds, valid_k=kid)
-    trainloader = DataLoader(dataset.train_set, batch_size=bs, shuffle=True, num_workers=num_workers)
-    validloader = DataLoader(dataset.valid_set, batch_size=bs, shuffle=False, num_workers=num_workers)
+    dataset = EEGAgeDataSet(data_dir, n_samples=n_data_samples, folds=folds, valid_k=kid)
+    trainloader = GraphDataLoader(dataset.train_set, batch_size=bs, shuffle=True, num_workers=num_workers)
+    validloader = GraphDataLoader(dataset.valid_set, batch_size=bs, shuffle=False, num_workers=num_workers)
     logr.log('> Training batches: {}, Validation batches: {}\n'.format(len(trainloader), len(validloader)))
 
     # Initialize the Model
@@ -100,11 +107,11 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
             if Config.PROFILE:
                 with profiler.profile(profile_memory=True, use_cuda=True) as prof:
                     with profiler.record_function('model_inference'):
-                        res = net(batch)
+                        res = net(features)
                 logr.log(prof.key_averages().table(sort_by="cuda_time_total"))
                 exit(100)
 
-            res = net(batch)
+            res = net(features)
 
             loss = criterion(res, target)
             loss.backward()
@@ -171,7 +178,7 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
     logr.log('> Training finished.\n')
 
 
-def evalMetrics(dataloader: DataLoader, device: torch.device, net):
+def evalMetrics(dataloader: GraphDataLoader, device: torch.device, net):
     metrics = constructMetricsStorage()
     for j, batch in enumerate(dataloader):
         if device.type == 'cuda':
@@ -190,7 +197,7 @@ def evalMetrics(dataloader: DataLoader, device: torch.device, net):
 
 def evaluate(model_path, bs=Config.BATCH_SIZE_DEFAULT, num_workers=Config.WORKERS_DEFAULT,
              use_gpu=True, gpu_id=Config.GPU_ID_DEFAULT,
-             data_dir=Config.DATA_DIR_DEFAULT, logr=None,
+             data_dir=Config.DATA_DIR_DEFAULT, n_data_samples=Config.NUM_SAMPLES, logr=None,
              folds=Config.FOLDS_DEFAULT, kid=Config.VALID_K_DEFAULT):
     # CUDA if needed
     device = torch.device('cuda:%d' % gpu_id if (use_gpu and torch.cuda.is_available()) else 'cpu')
@@ -206,9 +213,9 @@ def evaluate(model_path, bs=Config.BATCH_SIZE_DEFAULT, num_workers=Config.WORKER
 
     # Load DataSet
     logr.log('> Loading DataSet from {}\n'.format(data_dir))
-    dataset = EEGAgeDataSet(data_dir, folds=folds, valid_k=kid)
-    validloader = DataLoader(dataset.valid_set, batch_size=bs, shuffle=False, num_workers=num_workers)
-    testloader = DataLoader(dataset.test_set, batch_size=bs, shuffle=False, num_workers=num_workers)
+    dataset = EEGAgeDataSet(data_dir, n_samples=n_data_samples, folds=folds, valid_k=kid)
+    validloader = GraphDataLoader(dataset.valid_set, batch_size=bs, shuffle=False, num_workers=num_workers)
+    testloader = GraphDataLoader(dataset.test_set, batch_size=bs, shuffle=False, num_workers=num_workers)
     logr.log('> Validation batches: {}, Test batches: {}\n'.format(len(validloader), len(testloader)))
 
     # Evaluate
@@ -253,6 +260,7 @@ if __name__ == '__main__':
     parser.add_argument('-lf', '--loss_function', type=str, default=Config.LOSS_FUNC_DEFAULT, help='Specify which loss function to use, default = {}'.format(Config.LOSS_FUNC_DEFAULT))
     parser.add_argument('-f', '--folds', type=int, default=Config.FOLDS_DEFAULT, help='Number of folds, default = {}'.format(Config.FOLDS_DEFAULT))
     parser.add_argument('-k', '--k_id', type=int, default=Config.VALID_K_DEFAULT, help='Fold number k (index) used for validation, default = {}'.format(Config.VALID_K_DEFAULT))
+    parser.add_argument('-nd', '--num_samples', type=int, default=Config.NUM_SAMPLES, help='Specify the number of samples to run, default = {}'.format(Config.NUM_SAMPLES))
 
     FLAGS, unparsed = parser.parse_known_args()
 
@@ -263,7 +271,8 @@ if __name__ == '__main__':
     if working_mode == 'train':
         train(lr=FLAGS.learning_rate, bs=FLAGS.batch_size, ep=FLAGS.max_epochs,
               eval_freq=FLAGS.eval_freq, opt=FLAGS.optimizer, num_workers=FLAGS.cores,
-              use_gpu=(FLAGS.gpu == 1), gpu_id=FLAGS.gpu_id, data_dir=FLAGS.data_dir, logr=logger,
+              use_gpu=(FLAGS.gpu == 1), gpu_id=FLAGS.gpu_id,
+              data_dir=FLAGS.data_dir, n_data_samples=FLAGS.num_samples, logr=logger,
               model=FLAGS.network, model_save_dir=FLAGS.model_save_dir,
               loss_function=FLAGS.loss_function,
               feat_dim=FLAGS.feature_dim, hidden_dim=FLAGS.hidden_dim,
@@ -279,7 +288,7 @@ if __name__ == '__main__':
         # Normal
         evaluate(eval_file, bs=FLAGS.batch_size, num_workers=FLAGS.cores,
                  use_gpu=(FLAGS.gpu == 1), gpu_id=FLAGS.gpu_id,
-                 data_dir=FLAGS.data_dir, logr=logger,
+                 data_dir=FLAGS.data_dir, n_data_samples=FLAGS.num_samples, logr=logger,
                  folds=FLAGS.folds, kid=FLAGS.k_id)
         logger.close()
     else:
