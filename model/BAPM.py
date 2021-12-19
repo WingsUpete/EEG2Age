@@ -45,9 +45,9 @@ class BrainAgePredictionModel(nn.Module):
         g: dgl.DGLGraph = inputs['graph']
 
         # Short-term Temporal
-        feat = g.ndata['v']
-        convFeat = self.stCNN(feat)
-        g.ndata['v'] = convFeat
+        # feat = g.ndata['v']
+        # convFeat = self.stCNN(feat)
+        # g.ndata['v'] = convFeat
 
         # Spatial
         spatFeat = self.spatAttLayer(g)
