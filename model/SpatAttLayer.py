@@ -1,6 +1,5 @@
 import os
 import sys
-import time
 
 import torch
 import torch.nn as nn
@@ -67,17 +66,3 @@ class SpatAttLayer(nn.Module):
         del normH
 
         return reshapedH
-
-
-if __name__ == '__main__':
-    # Before testing, remove dot ('.') in the import specification
-    pack = torch.load('../data/EEG_age_data/1.pt')
-    features = pack['V']
-    (graph,), _ = dgl.load_graphs('../data/EEG_age_data/graph.dgl')
-    graph.ndata['v'] = features
-
-    spat = SpatAttLayer(feat_dim=1, hidden_dim=1, num_nodes=features.shape[-3], num_heads=3, gate=True, merge='mean')
-
-    time0 = time.time()
-    out = spat(graph)
-    print(out, time.time() - time0, 'sec')
