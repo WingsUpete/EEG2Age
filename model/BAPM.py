@@ -30,10 +30,10 @@ class BrainAgePredictionModel(nn.Module):
         self.temp_embed_dim = self.spat_embed_dim       # Embedding dimension after temporal feature extraction
 
         # Short-term Temporal Layer
-        # self.stCNN = StCNN(hidden_dim=self.hidden_dim)
+        self.stCNN = StCNN(hidden_dim=self.hidden_dim)
 
         # Spatial Attention Layer
-        self.spatAttLayer = SpatAttLayer(feat_dim=1, hidden_dim=self.stC_embed_dim, num_nodes=self.num_nodes, num_heads=self.num_heads, gate=True, merge='mean')
+        self.spatAttLayer = SpatAttLayer(feat_dim=self.stC_embed_dim, hidden_dim=self.stC_embed_dim, num_nodes=self.num_nodes, num_heads=self.num_heads, gate=True, merge='mean')
 
         # Temporal Attention Layer
         self.tempAttLayer = TempLayer(embed_dim=self.spat_embed_dim, num_nodes=self.num_nodes)
@@ -45,9 +45,9 @@ class BrainAgePredictionModel(nn.Module):
         g: dgl.DGLGraph = inputs['graph']
 
         # Short-term Temporal
-        # feat = g.ndata['v']
-        # convFeat = self.stCNN(feat)
-        # g.ndata['v'] = convFeat
+        feat = g.ndata['v']
+        convFeat = self.stCNN(feat)
+        g.ndata['v'] = convFeat
 
         # Spatial
         spatFeat = self.spatAttLayer(g)
