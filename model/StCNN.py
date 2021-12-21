@@ -10,9 +10,10 @@ class StCNN(nn.Module):
     def __init__(self, hidden_dim):
         super(StCNN, self).__init__()
         self.hidden_dim = hidden_dim
+        self.stride = int(Config.EEG_FREQUENCY / 8)
 
         self.secGrabber = nn.Conv1d(in_channels=1, out_channels=self.hidden_dim,
-                                    kernel_size=Config.EEG_FREQUENCY, stride=Config.EEG_FREQUENCY)
+                                    kernel_size=Config.EEG_FREQUENCY, stride=self.stride)
         self.bn = nn.BatchNorm1d(num_features=self.hidden_dim)
 
     def forward(self, feat: torch.Tensor):
