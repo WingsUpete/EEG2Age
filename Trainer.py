@@ -37,7 +37,7 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
           loss_function=Config.LOSS_FUNC_DEFAULT,
           feat_dim=Config.FEAT_DIM_DEFAULT, hidden_dim=Config.HIDDEN_DIM_DEFAULT,
           folds=Config.FOLDS_DEFAULT, kid=Config.VALID_K_DEFAULT,
-          stCNN_stride=Config.STCNN_STRIDE):
+          sample_split=Config.SAMPLE_SPLIT, stCNN_stride=Config.STCNN_STRIDE):
     # CUDA if possible
     device = torch.device('cuda:%d' % gpu_id if (use_gpu and torch.cuda.is_available()) else 'cpu')
     logr.log('> device: {}\n'.format(device))
@@ -46,7 +46,7 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
     logr.log('> Loading DataSet from %s, given %d samples%s\n' %
              (data_dir, n_data_samples, ', using a customized graph' if cust_graph else '')
              )
-    dataset = EEGAgeDataSet(data_dir, n_samples=n_data_samples, cust_graph=cust_graph, folds=folds, valid_k=kid)
+    dataset = EEGAgeDataSet(data_dir, n_samples=n_data_samples, sample_split=sample_split, cust_graph=cust_graph, folds=folds, valid_k=kid)
     trainloader = GraphDataLoader(dataset.train_set, batch_size=bs, shuffle=True, num_workers=num_workers)
     validloader = GraphDataLoader(dataset.valid_set, batch_size=bs, shuffle=False, num_workers=num_workers)
     logr.log('> Training batches: {}, Validation batches: {}\n'.format(len(trainloader), len(validloader)))
@@ -215,7 +215,7 @@ def evaluate(model_path, bs=Config.BATCH_SIZE_DEFAULT, num_workers=Config.WORKER
              use_gpu=True, gpu_id=Config.GPU_ID_DEFAULT, logr=None,
              data_dir=Config.DATA_DIR_DEFAULT, n_data_samples=Config.NUM_SAMPLES, cust_graph=False,
              folds=Config.FOLDS_DEFAULT, kid=Config.VALID_K_DEFAULT,
-             stCNN_stride=Config.STCNN_STRIDE):
+             sample_split=Config.SAMPLE_SPLIT, stCNN_stride=Config.STCNN_STRIDE):
     # CUDA if needed
     device = torch.device('cuda:%d' % gpu_id if (use_gpu and torch.cuda.is_available()) else 'cpu')
     logr.log('> device: {}\n'.format(device))
@@ -232,7 +232,7 @@ def evaluate(model_path, bs=Config.BATCH_SIZE_DEFAULT, num_workers=Config.WORKER
     logr.log('> Loading DataSet from %s, given %d samples%s\n' %
              (data_dir, n_data_samples, ', using a customized graph' if cust_graph else '')
              )
-    dataset = EEGAgeDataSet(data_dir, n_samples=n_data_samples, cust_graph=cust_graph, folds=folds, valid_k=kid)
+    dataset = EEGAgeDataSet(data_dir, n_samples=n_data_samples, sample_split=sample_split, cust_graph=cust_graph, folds=folds, valid_k=kid)
     validloader = GraphDataLoader(dataset.valid_set, batch_size=bs, shuffle=False, num_workers=num_workers)
     testloader = GraphDataLoader(dataset.test_set, batch_size=bs, shuffle=False, num_workers=num_workers)
     logr.log('> Validation batches: {}, Test batches: {}\n'.format(len(validloader), len(testloader)))
@@ -309,7 +309,7 @@ if __name__ == '__main__':
               loss_function=FLAGS.loss_function,
               feat_dim=FLAGS.feature_dim, hidden_dim=FLAGS.hidden_dim,
               folds=FLAGS.folds, kid=FLAGS.k_id,
-              stCNN_stride=FLAGS.stcnn_stride)
+              sample_split=FLAGS.sample_split, stCNN_stride=FLAGS.stcnn_stride)
         logger.close()
     elif working_mode == 'eval':
         eval_file = FLAGS.eval
@@ -323,7 +323,7 @@ if __name__ == '__main__':
                  use_gpu=(FLAGS.gpu == 1), gpu_id=FLAGS.gpu_id, logr=logger,
                  data_dir=FLAGS.data_dir, n_data_samples=FLAGS.num_samples, cust_graph=(FLAGS.customize_graph == 1),
                  folds=FLAGS.folds, kid=FLAGS.k_id,
-                 stCNN_stride=FLAGS.stcnn_stride)
+                 sample_split=FLAGS.sample_split, stCNN_stride=FLAGS.stcnn_stride)
         logger.close()
     else:
         sys.stderr.write('Please specify the working mode (train/eval)\n')
