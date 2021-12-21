@@ -31,7 +31,7 @@ class BrainAgePredictionModel(nn.Module):
         self.temp_embed_dim = self.spat_embed_dim       # Embedding dimension after temporal feature extraction
 
         # Short-term Temporal Layer
-        self.stCNN = StCNN(hidden_dim=self.hidden_dim, stride=self.stCNN_stride)
+        self.stCNN = StCNN(feat_dim=self.feat_dim, hidden_dim=self.hidden_dim, stride=self.stCNN_stride)
 
         # Spatial Attention Layer
         self.spatAttLayer = SpatAttLayer(feat_dim=self.stC_embed_dim, hidden_dim=self.stC_embed_dim, num_nodes=self.num_nodes, num_heads=self.num_heads, gate=True, merge='mean')
@@ -60,6 +60,28 @@ class BrainAgePredictionModel(nn.Module):
         # Transfer
         pred = self.tranAttLayer(spatTempFeat)
         del spatTempFeat
+
+        return pred
+
+
+# Ablation Experiment
+class BAPM1(nn.Module):
+    def __init__(self, feat_dim, hidden_dim, num_nodes, stCNN_stride):
+        super(BAPM1, self).__init__()
+        self.feat_dim = feat_dim
+        self.hidden_dim = hidden_dim
+        self.num_nodes = num_nodes
+        self.stCNN_stride = stCNN_stride
+
+        # Short-term Temporal Layer
+        self.stCNN = StCNN(feat_dim=self.feat_dim, hidden_dim=self.hidden_dim, stride=self.stCNN_stride)
+
+    def forward(self, inputs: dict):
+        # Short-term Temporal
+        feat = inputs['features']
+        convFeat = self.stCNN(feat)
+
+        pred = None
 
         return pred
 
