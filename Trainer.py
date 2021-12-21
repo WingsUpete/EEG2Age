@@ -178,7 +178,7 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
                 logr.log('!!! Validation: loss = %.6f, %s\n' % (val_loss, metricsMap2Str(val_metrics)))
 
                 # Save model if we have better validation results
-                if val_loss < min_eval_loss:
+                if epoch_i >= 10 and val_loss < min_eval_loss:
                     min_eval_loss = val_loss
                     model_path = os.path.join(model_save_dir, '{}.pth'.format(logr.time_tag))
                     torch.save(net, model_path)
