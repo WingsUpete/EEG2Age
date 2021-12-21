@@ -13,7 +13,7 @@ class StCNN(nn.Module):
         self.stride = int(Config.EEG_FREQUENCY / 8)
 
         self.secGrabber = nn.Conv1d(in_channels=1, out_channels=self.hidden_dim,
-                                    kernel_size=Config.EEG_FREQUENCY, stride=self.stride)
+                                    kernel_size=Config.EEG_FREQUENCY, stride=Config.STCNN_STRIDE)
         self.bn = nn.BatchNorm1d(num_features=self.hidden_dim)
 
     def forward(self, feat: torch.Tensor):
