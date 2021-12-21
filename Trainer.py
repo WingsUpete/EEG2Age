@@ -159,7 +159,7 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
         if (epoch_i + 1) % eval_freq == 0:
             net.eval()
             val_metrics = constructMetricsStorage()
-            val_loss = 0
+            val_loss_total = 0
             with torch.no_grad():
                 for j, val_batch in enumerate(validloader):
                     if device.type == 'cuda':
@@ -173,19 +173,19 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
 
                     val_loss = criterion(val_res, val_target)
 
-                    val_loss += val_loss.item()
+                    val_loss_total += val_loss.item()
                     val_metrics = aggMetricsWithMap(val_metrics, val_res, val_target)
                     del val_features
                     del val_target
                     del val_res
 
-                val_loss /= len(validloader)
+                val_loss_total /= len(validloader)
                 val_metrics = wrapMetricsWithMap(val_metrics, len(validloader))
-                logr.log('!!! Validation: loss = %.6f, %s\n' % (val_loss, metricsMap2Str(val_metrics)))
+                logr.log('!!! Validation: loss = %.6f, %s\n' % (val_loss_total, metricsMap2Str(val_metrics)))
 
                 # Save model if we have better validation results
-                if epoch_i >= 10 and val_loss < min_eval_loss:
-                    min_eval_loss = val_loss
+                if epoch_i >= 10 and val_loss_total < min_eval_loss:
+                    min_eval_loss = val_loss_total
                     model_path = os.path.join(model_save_dir, '{}.pth'.format(logr.time_tag))
                     torch.save(net, model_path)
                     logr.log('Model: {} has been saved since it achieves smaller loss.\n'.format(model_path))
