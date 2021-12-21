@@ -61,7 +61,7 @@ def matOD2G(mat, oList: list, dList: list, nGNodes):
     return graph
 
 
-def procData(data_path, out_dir, scale=DATA_SCALE, sample_split=4):
+def procData(data_path, out_dir, sample_split=4, scale=DATA_SCALE):
     # Read and scale data
     df = pd.read_csv(data_path)
     ts_df = torch.tensor(df.values).float()
@@ -134,7 +134,7 @@ class GraphBuilder:
         jobs = []
         for file in self.files:
             file_path = os.path.join(self.data_dir, file)
-            jobs.append(pool.apply_async(procData, args=(file_path, self.out_dir, self.sample_split)))
+            jobs.append(pool.apply_async(procData, args=(file_path, self.out_dir, self.sample_split, DATA_SCALE)))
         pool.close()
 
         Ps = []
