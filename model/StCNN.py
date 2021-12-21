@@ -7,13 +7,13 @@ import Config
 
 
 class StCNN(nn.Module):
-    def __init__(self, hidden_dim):
+    def __init__(self, hidden_dim, stride):
         super(StCNN, self).__init__()
         self.hidden_dim = hidden_dim
-        self.stride = int(Config.EEG_FREQUENCY / 8)
+        self.stride = stride
 
         self.secGrabber = nn.Conv1d(in_channels=1, out_channels=self.hidden_dim,
-                                    kernel_size=Config.EEG_FREQUENCY, stride=Config.STCNN_STRIDE)
+                                    kernel_size=Config.EEG_FREQUENCY, stride=self.stride)
         self.bn = nn.BatchNorm1d(num_features=self.hidden_dim)
 
     def forward(self, feat: torch.Tensor):
@@ -39,7 +39,7 @@ if __name__ == '__main__':
     pack = torch.load('../data/EEG_age_data/1.pt')
     features = pack['V']
 
-    stCNN = StCNN(hidden_dim=Config.HIDDEN_DIM_DEFAULT)
+    stCNN = StCNN(hidden_dim=Config.HIDDEN_DIM_DEFAULT, stride=Config.STCNN_STRIDE)
 
     time0 = time.time()
     out = stCNN(features)

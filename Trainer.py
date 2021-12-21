@@ -36,7 +36,8 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
           model=Config.NETWORK_DEFAULT, model_save_dir=Config.MODEL_SAVE_DIR_DEFAULT,
           loss_function=Config.LOSS_FUNC_DEFAULT,
           feat_dim=Config.FEAT_DIM_DEFAULT, hidden_dim=Config.HIDDEN_DIM_DEFAULT,
-          folds=Config.FOLDS_DEFAULT, kid=Config.VALID_K_DEFAULT):
+          folds=Config.FOLDS_DEFAULT, kid=Config.VALID_K_DEFAULT,
+          stCNN_stride=Config.STCNN_STRIDE):
     # CUDA if possible
     device = torch.device('cuda:%d' % gpu_id if (use_gpu and torch.cuda.is_available()) else 'cpu')
     logr.log('> device: {}\n'.format(device))
@@ -51,12 +52,12 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
     logr.log('> Training batches: {}, Validation batches: {}\n'.format(len(trainloader), len(validloader)))
 
     # Initialize the Model
-    net = BrainAgePredictionModel(feat_dim=feat_dim, hidden_dim=hidden_dim, num_nodes=Config.NUM_NODES, num_heads=Config.NUM_HEADS_DEFAULT)
+    net = BrainAgePredictionModel(feat_dim=feat_dim, hidden_dim=hidden_dim, num_nodes=Config.NUM_NODES, stCNN_stride=stCNN_stride, num_heads=Config.NUM_HEADS_DEFAULT)
     logr.log('> Initializing the Training Model: {}\n'.format(model))
     if model == 'FeedForward':
         net = FeedForward(num_channels=Config.NUM_NODES, num_timestamps=Config.NUM_TIMESTAMPS)
     elif model == 'BAPM':
-        net = BrainAgePredictionModel(feat_dim=feat_dim, hidden_dim=hidden_dim, num_nodes=Config.NUM_NODES, num_heads=Config.NUM_HEADS_DEFAULT)
+        net = BrainAgePredictionModel(feat_dim=feat_dim, hidden_dim=hidden_dim, num_nodes=Config.NUM_NODES, stCNN_stride=stCNN_stride, num_heads=Config.NUM_HEADS_DEFAULT)
     elif model == 'GRUNet':
         net = GRUNet(hidden_dim=hidden_dim, num_nodes=Config.NUM_NODES)
     logr.log('> Model Structure:\n{}\n'.format(net))
@@ -213,7 +214,8 @@ def evalMetrics(dataloader: GraphDataLoader, device: torch.device, net):
 def evaluate(model_path, bs=Config.BATCH_SIZE_DEFAULT, num_workers=Config.WORKERS_DEFAULT,
              use_gpu=True, gpu_id=Config.GPU_ID_DEFAULT, logr=None,
              data_dir=Config.DATA_DIR_DEFAULT, n_data_samples=Config.NUM_SAMPLES, cust_graph=False,
-             folds=Config.FOLDS_DEFAULT, kid=Config.VALID_K_DEFAULT):
+             folds=Config.FOLDS_DEFAULT, kid=Config.VALID_K_DEFAULT,
+             stCNN_stride=Config.STCNN_STRIDE):
     # CUDA if needed
     device = torch.device('cuda:%d' % gpu_id if (use_gpu and torch.cuda.is_available()) else 'cpu')
     logr.log('> device: {}\n'.format(device))
@@ -283,6 +285,7 @@ if __name__ == '__main__':
     parser.add_argument('-k', '--k_id', type=int, default=Config.VALID_K_DEFAULT, help='Fold number k (index) used for validation, default = {}'.format(Config.VALID_K_DEFAULT))
     parser.add_argument('-nd', '--num_samples', type=int, default=Config.NUM_SAMPLES, help='Specify the number of samples to run, default = {}'.format(Config.NUM_SAMPLES))
     parser.add_argument('-cg', '--customize_graph', type=int, default=Config.CUSTOMIZE_GRAPH, help='Specify whether to use a customized graph, default = {}'.format(Config.CUSTOMIZE_GRAPH))
+    parser.add_argument('-sts', '--stcnn_stride', type=int, default=Config.STCNN_STRIDE, help='Specify the stride for StCNN (for testing), default = {}'.format(Config.STCNN_STRIDE))
 
     FLAGS, unparsed = parser.parse_known_args()
 
@@ -298,7 +301,8 @@ if __name__ == '__main__':
               model=FLAGS.network, model_save_dir=FLAGS.model_save_dir,
               loss_function=FLAGS.loss_function,
               feat_dim=FLAGS.feature_dim, hidden_dim=FLAGS.hidden_dim,
-              folds=FLAGS.folds, kid=FLAGS.k_id)
+              folds=FLAGS.folds, kid=FLAGS.k_id,
+              stCNN_stride=FLAGS.stcnn_stride)
         logger.close()
     elif working_mode == 'eval':
         eval_file = FLAGS.eval
@@ -311,7 +315,8 @@ if __name__ == '__main__':
         evaluate(eval_file, bs=FLAGS.batch_size, num_workers=FLAGS.cores,
                  use_gpu=(FLAGS.gpu == 1), gpu_id=FLAGS.gpu_id, logr=logger,
                  data_dir=FLAGS.data_dir, n_data_samples=FLAGS.num_samples, cust_graph=(FLAGS.customize_graph == 1),
-                 folds=FLAGS.folds, kid=FLAGS.k_id)
+                 folds=FLAGS.folds, kid=FLAGS.k_id,
+                 stCNN_stride=FLAGS.stcnn_stride)
         logger.close()
     else:
         sys.stderr.write('Please specify the working mode (train/eval)\n')
