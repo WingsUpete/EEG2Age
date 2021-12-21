@@ -22,7 +22,7 @@ class TempLayer(nn.Module):
         del h
 
         # Transfer back
-        o = o[-1].reshape(o.shape[1], self.num_nodes, self.embed_dim)
+        o = o[-1].reshape(-1, self.num_nodes, self.embed_dim)
 
         # Batch Norm
         normO = self.bn(torch.transpose(o, -2, -1))
