@@ -18,7 +18,7 @@ PPC_THRESHOLD = 0.7
 DATA_DIR_DEFAULT = '../data/EEG_age_data_raw'
 OUT_DIR_DEFAULT = 'data/'
 NUM_WORKERS_DEFAULT = 4
-SAMPLE_SPLIT_DEFAULT = 4
+SAMPLE_SPLIT_DEFAULT = 16
 
 
 def path2FileNameWithoutExt(path):
