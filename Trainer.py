@@ -15,7 +15,7 @@ sys.stderr = stderr
 
 from util import Logger, plot_grad_flow, constructMetricsStorage, aggMetricsWithMap, wrapMetricsWithMap, metricsMap2Str
 from EEGAgeDataSet import EEGAgeDataSet
-from model import FeedForward, GRUNet, BrainAgePredictionModel
+from model import FeedForward, GRUNet, BrainAgePredictionModel, BAPM1, BAPM2
 
 import Config
 if Config.CHECK_GRADS:
@@ -57,10 +57,16 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
     if model == 'FeedForward':
         num_timestamps = int(Config.TOTAL_TIMESTAMPS / sample_split)
         net = FeedForward(num_channels=Config.NUM_NODES, num_timestamps=num_timestamps)
-    elif model == 'BAPM':
-        net = BrainAgePredictionModel(feat_dim=feat_dim, hidden_dim=hidden_dim, num_nodes=Config.NUM_NODES, stCNN_stride=stCNN_stride, num_heads=Config.NUM_HEADS_DEFAULT)
     elif model == 'GRUNet':
         net = GRUNet(hidden_dim=hidden_dim, num_nodes=Config.NUM_NODES)
+    elif model == 'BAPM':
+        net = BrainAgePredictionModel(feat_dim=feat_dim, hidden_dim=hidden_dim, num_nodes=Config.NUM_NODES, stCNN_stride=stCNN_stride, num_heads=Config.NUM_HEADS_DEFAULT)
+    elif model == 'BAPM1':
+        num_timestamps = int(Config.TOTAL_TIMESTAMPS / sample_split)
+        net = BAPM1(feat_dim=feat_dim, hidden_dim=hidden_dim, num_nodes=Config.NUM_NODES, stCNN_stride=stCNN_stride, num_timestamps=num_timestamps)
+    elif model == 'BAPM2':
+        num_timestamps = int(Config.TOTAL_TIMESTAMPS / sample_split)
+        net = BAPM2(feat_dim=feat_dim, hidden_dim=hidden_dim, num_nodes=Config.NUM_NODES, stCNN_stride=stCNN_stride, num_heads=Config.NUM_HEADS_DEFAULT, num_timestamps=num_timestamps)
     logr.log('> Model Structure:\n{}\n'.format(net))
     if device:
         net.to(device)
@@ -283,7 +289,7 @@ if __name__ == '__main__':
     parser.add_argument('-gpu', '--gpu', type=int, default=Config.USE_GPU_DEFAULT, help='Specify whether to use GPU, default = {}'.format(Config.USE_GPU_DEFAULT))
     parser.add_argument('-gid', '--gpu_id', type=int, default=Config.GPU_ID_DEFAULT, help='Specify which GPU to use, default = {}'.format(Config.GPU_ID_DEFAULT))
 
-    parser.add_argument('-net', '--network', type=str, default=Config.NETWORK_DEFAULT, help='Specify which model/network to use, default = {}'.format(Config.NETWORK_DEFAULT))
+    parser.add_argument('-net', '--network', type=str, default=Config.NETWORK_DEFAULT, help='Specify which model/network to use, default = {}, choices = {}'.format(Config.NETWORK_DEFAULT, Config.NETWORKS))
     parser.add_argument('-m', '--mode', type=str, default=Config.MODE_DEFAULT, help='Specify which mode the discriminator runs in (train, eval), default = {}'.format(Config.MODE_DEFAULT))
     parser.add_argument('-e', '--eval', type=str, default=Config.EVAL_DEFAULT, help='Specify the location of saved network to be loaded for evaluation, default = {}'.format(Config.EVAL_DEFAULT))
     parser.add_argument('-md', '--model_save_dir', type=str, default=Config.MODEL_SAVE_DIR_DEFAULT, help='Specify the location of network to be saved, default = {}'.format(Config.MODEL_SAVE_DIR_DEFAULT))
