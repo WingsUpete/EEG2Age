@@ -8,16 +8,15 @@ class TempLayer(nn.Module):
         self.embed_dim = embed_dim
         self.num_nodes = num_nodes
 
-        self.gru_embed_dim = int(self.embed_dim * self.num_nodes)
-        self.gru = nn.GRU(self.gru_embed_dim, self.gru_embed_dim)
+        self.gru = nn.GRU(self.embed_dim, self.embed_dim)
 
         self.bn = nn.BatchNorm1d(num_features=self.embed_dim)
 
     def forward(self, embed_feat: torch.Tensor):
         # `embed_feat` is of shape: BS * NODE * TIME * FEAT
-        # need to change to: TIME * BS * (NODE * FEAT)
+        # need to change to: TIME * (BS * NODE) * FEAT
         x = embed_feat.permute(2, 0, 1, 3)
-        x = x.reshape(x.shape[0], x.shape[1], -1)
+        x = x.reshape(x.shape[0], -1, self.embed_dim)
         o, h = self.gru(x)
         del x
         del h
