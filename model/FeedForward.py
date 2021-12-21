@@ -16,7 +16,7 @@ import Config
 
 
 class FeedForward(nn.Module):
-    def __init__(self, num_channels=Config.NUM_NODES, num_timestamps=Config.NUM_TIMESTAMPS):
+    def __init__(self, num_channels=Config.NUM_NODES, num_timestamps=int(Config.TOTAL_TIMESTAMPS / Config.SAMPLE_SPLIT_DEFAULT)):
         super(FeedForward, self).__init__()
         self.node_dim = num_channels
         self.time_dim = num_timestamps
@@ -51,7 +51,7 @@ if __name__ == '__main__':
         'graph': graph
     }
 
-    dense = FeedForward(num_channels=Config.NUM_NODES, num_timestamps=Config.NUM_TIMESTAMPS)
+    dense = FeedForward(num_channels=Config.NUM_NODES, num_timestamps=int(Config.TOTAL_TIMESTAMPS / Config.SAMPLE_SPLIT_DEFAULT))
     time0 = time.time()
     out = dense(ins)
     print(out, time.time() - time0, 'sec')

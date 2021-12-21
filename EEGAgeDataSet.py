@@ -66,7 +66,7 @@ class EEGAgeDataSetItem(DGLDataset):
 
 
 class EEGAgeDataSet:
-    def __init__(self, data_dir, n_samples, sample_split=Config.SAMPLE_SPLIT, cust_graph=False,
+    def __init__(self, data_dir, n_samples, sample_split=Config.SAMPLE_SPLIT_DEFAULT, cust_graph=False,
                  folds=Config.FOLDS_DEFAULT, valid_k=Config.VALID_K_DEFAULT):
         self.data_dir = data_dir
         checkPathExistence(self.data_dir)

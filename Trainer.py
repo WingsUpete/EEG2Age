@@ -32,12 +32,12 @@ def batch2device(batch: dict, device: torch.device):
 def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Config.MAX_EPOCHS_DEFAULT,
           eval_freq=Config.EVAL_FREQ_DEFAULT, opt=Config.OPTIMIZER_DEFAULT, num_workers=Config.WORKERS_DEFAULT,
           use_gpu=True, gpu_id=Config.GPU_ID_DEFAULT, logr=None,
-          data_dir=Config.DATA_DIR_DEFAULT, n_data_samples=Config.NUM_SAMPLES, cust_graph=False,
+          data_dir=Config.DATA_DIR_DEFAULT, n_data_samples=Config.NUM_SAMPLES_DEFAULT, cust_graph=False,
           model=Config.NETWORK_DEFAULT, model_save_dir=Config.MODEL_SAVE_DIR_DEFAULT,
           loss_function=Config.LOSS_FUNC_DEFAULT,
           feat_dim=Config.FEAT_DIM_DEFAULT, hidden_dim=Config.HIDDEN_DIM_DEFAULT,
           folds=Config.FOLDS_DEFAULT, kid=Config.VALID_K_DEFAULT,
-          sample_split=Config.SAMPLE_SPLIT, stCNN_stride=Config.STCNN_STRIDE):
+          sample_split=Config.SAMPLE_SPLIT_DEFAULT, stCNN_stride=Config.STCNN_STRIDE_DEFAULT):
     # CUDA if possible
     device = torch.device('cuda:%d' % gpu_id if (use_gpu and torch.cuda.is_available()) else 'cpu')
     logr.log('> device: {}\n'.format(device))
@@ -55,7 +55,8 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
     net = BrainAgePredictionModel(feat_dim=feat_dim, hidden_dim=hidden_dim, num_nodes=Config.NUM_NODES, stCNN_stride=stCNN_stride, num_heads=Config.NUM_HEADS_DEFAULT)
     logr.log('> Initializing the Training Model: {}\n'.format(model))
     if model == 'FeedForward':
-        net = FeedForward(num_channels=Config.NUM_NODES, num_timestamps=Config.NUM_TIMESTAMPS)
+        num_timestamps = int(Config.TOTAL_TIMESTAMPS / sample_split)
+        net = FeedForward(num_channels=Config.NUM_NODES, num_timestamps=num_timestamps)
     elif model == 'BAPM':
         net = BrainAgePredictionModel(feat_dim=feat_dim, hidden_dim=hidden_dim, num_nodes=Config.NUM_NODES, stCNN_stride=stCNN_stride, num_heads=Config.NUM_HEADS_DEFAULT)
     elif model == 'GRUNet':
@@ -213,9 +214,9 @@ def evalMetrics(dataloader: GraphDataLoader, device: torch.device, net):
 
 def evaluate(model_path, bs=Config.BATCH_SIZE_DEFAULT, num_workers=Config.WORKERS_DEFAULT,
              use_gpu=True, gpu_id=Config.GPU_ID_DEFAULT, logr=None,
-             data_dir=Config.DATA_DIR_DEFAULT, n_data_samples=Config.NUM_SAMPLES, cust_graph=False,
+             data_dir=Config.DATA_DIR_DEFAULT, n_data_samples=Config.NUM_SAMPLES_DEFAULT, cust_graph=False,
              folds=Config.FOLDS_DEFAULT, kid=Config.VALID_K_DEFAULT,
-             sample_split=Config.SAMPLE_SPLIT, stCNN_stride=Config.STCNN_STRIDE):
+             sample_split=Config.SAMPLE_SPLIT_DEFAULT, stCNN_stride=Config.STCNN_STRIDE_DEFAULT):
     # CUDA if needed
     device = torch.device('cuda:%d' % gpu_id if (use_gpu and torch.cuda.is_available()) else 'cpu')
     logr.log('> device: {}\n'.format(device))
@@ -275,8 +276,8 @@ if __name__ == '__main__':
     parser.add_argument('-dr', '--data_dir', type=str, default=Config.DATA_DIR_DEFAULT, help='Root directory of the input data, default = {}'.format(Config.DATA_DIR_DEFAULT))
     parser.add_argument('-f', '--folds', type=int, default=Config.FOLDS_DEFAULT, help='Number of folds, default = {}'.format(Config.FOLDS_DEFAULT))
     parser.add_argument('-k', '--k_id', type=int, default=Config.VALID_K_DEFAULT, help='Fold number k (index) used for validation, default = {}'.format(Config.VALID_K_DEFAULT))
-    parser.add_argument('-nd', '--num_samples', type=int, default=Config.NUM_SAMPLES, help='Specify the number of samples to run, default = {}'.format(Config.NUM_SAMPLES))
-    parser.add_argument('-cg', '--customize_graph', type=int, default=Config.CUSTOMIZE_GRAPH, help='Specify whether to use a customized graph, default = {}'.format(Config.CUSTOMIZE_GRAPH))
+    parser.add_argument('-nd', '--num_samples', type=int, default=Config.NUM_SAMPLES_DEFAULT, help='Specify the number of samples to run, default = {}'.format(Config.NUM_SAMPLES_DEFAULT))
+    parser.add_argument('-cg', '--customize_graph', type=int, default=Config.CUSTOMIZE_GRAPH_DEFAULT, help='Specify whether to use a customized graph, default = {}'.format(Config.CUSTOMIZE_GRAPH_DEFAULT))
 
     parser.add_argument('-c', '--cores', type=int, default=Config.WORKERS_DEFAULT, help='number of workers (cores used), default = {}'.format(Config.WORKERS_DEFAULT))
     parser.add_argument('-gpu', '--gpu', type=int, default=Config.USE_GPU_DEFAULT, help='Specify whether to use GPU, default = {}'.format(Config.USE_GPU_DEFAULT))
@@ -291,20 +292,23 @@ if __name__ == '__main__':
     parser.add_argument('-hd', '--hidden_dim', type=int, default=Config.HIDDEN_DIM_DEFAULT, help='Specify the hidden dimension, default = {}'.format(Config.HIDDEN_DIM_DEFAULT))
 
     # For testing
-    parser.add_argument('-s', '--sample_split', type=int, default=Config.SAMPLE_SPLIT, help='Specify sample split in preprocessing (for testing), default = {}'.format(Config.SAMPLE_SPLIT))
-    parser.add_argument('-sts', '--stcnn_stride', type=int, default=Config.STCNN_STRIDE, help='Specify the stride for StCNN (for testing), default = {}'.format(Config.STCNN_STRIDE))
+    parser.add_argument('-s', '--sample_split', type=int, default=Config.SAMPLE_SPLIT_DEFAULT, help='Specify sample split in preprocessing (for testing), default = {}'.format(Config.SAMPLE_SPLIT_DEFAULT))
+    parser.add_argument('-sts', '--stcnn_stride', type=int, default=Config.STCNN_STRIDE_DEFAULT, help='Specify the stride for StCNN (for testing), default = {}'.format(Config.STCNN_STRIDE_DEFAULT))
 
     FLAGS, unparsed = parser.parse_known_args()
 
     # Starts a log file in the specified directory
     logger = Logger(activate=True, logging_folder=FLAGS.log_dir) if FLAGS.log_dir else Logger(activate=False)
 
+    # Samples: if not specified, calculate
+    num_samples = int(Config.NUM_SUBJECTS * FLAGS.sample_split) if FLAGS.num_samples == -1 else FLAGS.num_samples
+
     working_mode = FLAGS.mode
     if working_mode == 'train':
         train(lr=FLAGS.learning_rate, bs=FLAGS.batch_size, ep=FLAGS.max_epochs,
               eval_freq=FLAGS.eval_freq, opt=FLAGS.optimizer, num_workers=FLAGS.cores,
               use_gpu=(FLAGS.gpu == 1), gpu_id=FLAGS.gpu_id, logr=logger,
-              data_dir=FLAGS.data_dir, n_data_samples=FLAGS.num_samples, cust_graph=(FLAGS.customize_graph == 1),
+              data_dir=FLAGS.data_dir, n_data_samples=num_samples, cust_graph=(FLAGS.customize_graph == 1),
               model=FLAGS.network, model_save_dir=FLAGS.model_save_dir,
               loss_function=FLAGS.loss_function,
               feat_dim=FLAGS.feature_dim, hidden_dim=FLAGS.hidden_dim,
@@ -321,7 +325,7 @@ if __name__ == '__main__':
         # Normal
         evaluate(eval_file, bs=FLAGS.batch_size, num_workers=FLAGS.cores,
                  use_gpu=(FLAGS.gpu == 1), gpu_id=FLAGS.gpu_id, logr=logger,
-                 data_dir=FLAGS.data_dir, n_data_samples=FLAGS.num_samples, cust_graph=(FLAGS.customize_graph == 1),
+                 data_dir=FLAGS.data_dir, n_data_samples=num_samples, cust_graph=(FLAGS.customize_graph == 1),
                  folds=FLAGS.folds, kid=FLAGS.k_id,
                  sample_split=FLAGS.sample_split, stCNN_stride=FLAGS.stcnn_stride)
         logger.close()
