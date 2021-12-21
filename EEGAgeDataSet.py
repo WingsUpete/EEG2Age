@@ -32,11 +32,12 @@ def checkKFold(folds, k):
 
 
 class EEGAgeDataSetItem(DGLDataset):
-    def __init__(self, data_dir, data_ids: list):
+    def __init__(self, data_dir, data_ids: list, cust_graph: bool):
         self.data_dir = data_dir
         self.data_ids = data_ids
+        self.cust_graph = cust_graph
 
-        self.graph_path = os.path.join(self.data_dir, 'graph.dgl')
+        self.graph_path = os.path.join(self.data_dir, 'graph_customize.dgl' if self.cust_graph else 'graph.dgl')
 
     def process(self):
         pass
@@ -65,10 +66,12 @@ class EEGAgeDataSetItem(DGLDataset):
 
 
 class EEGAgeDataSet:
-    def __init__(self, data_dir, n_samples, sample_split=Config.SAMPLE_SPLIT,
+    def __init__(self, data_dir, n_samples, sample_split=Config.SAMPLE_SPLIT, cust_graph=False,
                  folds=Config.FOLDS_DEFAULT, valid_k=Config.VALID_K_DEFAULT):
         self.data_dir = data_dir
         checkPathExistence(self.data_dir)
+
+        self.cust_graph = cust_graph
 
         self.n_samples = n_samples  # total: 1 -> n
         self.sample_split = sample_split
@@ -98,9 +101,9 @@ class EEGAgeDataSet:
         self.test_set_ids = [self.real_sample_map[test_set_id] for test_set_id in self.test_set_ids]
 
         # DataSet
-        self.train_set = EEGAgeDataSetItem(data_dir=self.data_dir, data_ids=self.train_set_ids)
-        self.valid_set = EEGAgeDataSetItem(data_dir=self.data_dir, data_ids=self.valid_set_ids)
-        self.test_set = EEGAgeDataSetItem(data_dir=self.data_dir, data_ids=self.test_set_ids)
+        self.train_set = EEGAgeDataSetItem(data_dir=self.data_dir, data_ids=self.train_set_ids, cust_graph=self.cust_graph)
+        self.valid_set = EEGAgeDataSetItem(data_dir=self.data_dir, data_ids=self.valid_set_ids, cust_graph=self.cust_graph)
+        self.test_set = EEGAgeDataSetItem(data_dir=self.data_dir, data_ids=self.test_set_ids, cust_graph=self.cust_graph)
 
     def getBadSamples(self):
         bad_samples = []

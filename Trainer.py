@@ -31,8 +31,8 @@ def batch2device(batch: dict, device: torch.device):
 
 def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Config.MAX_EPOCHS_DEFAULT,
           eval_freq=Config.EVAL_FREQ_DEFAULT, opt=Config.OPTIMIZER_DEFAULT, num_workers=Config.WORKERS_DEFAULT,
-          use_gpu=True, gpu_id=Config.GPU_ID_DEFAULT,
-          data_dir=Config.DATA_DIR_DEFAULT, n_data_samples=Config.NUM_SAMPLES, logr=None,
+          use_gpu=True, gpu_id=Config.GPU_ID_DEFAULT, logr=None,
+          data_dir=Config.DATA_DIR_DEFAULT, n_data_samples=Config.NUM_SAMPLES, cust_graph=False,
           model=Config.NETWORK_DEFAULT, model_save_dir=Config.MODEL_SAVE_DIR_DEFAULT,
           loss_function=Config.LOSS_FUNC_DEFAULT,
           feat_dim=Config.FEAT_DIM_DEFAULT, hidden_dim=Config.HIDDEN_DIM_DEFAULT,
@@ -42,8 +42,10 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
     logr.log('> device: {}\n'.format(device))
 
     # Load DataSet
-    logr.log('> Loading DataSet from {}\n'.format(data_dir))
-    dataset = EEGAgeDataSet(data_dir, n_samples=n_data_samples, folds=folds, valid_k=kid)
+    logr.log('> Loading DataSet from %s, given %d samples%s\n' %
+             (data_dir, n_data_samples, ', using a customized graph' if cust_graph else '')
+             )
+    dataset = EEGAgeDataSet(data_dir, n_samples=n_data_samples, cust_graph=cust_graph, folds=folds, valid_k=kid)
     trainloader = GraphDataLoader(dataset.train_set, batch_size=bs, shuffle=True, num_workers=num_workers)
     validloader = GraphDataLoader(dataset.valid_set, batch_size=bs, shuffle=False, num_workers=num_workers)
     logr.log('> Training batches: {}, Validation batches: {}\n'.format(len(trainloader), len(validloader)))
@@ -199,8 +201,8 @@ def evalMetrics(dataloader: GraphDataLoader, device: torch.device, net):
 
 
 def evaluate(model_path, bs=Config.BATCH_SIZE_DEFAULT, num_workers=Config.WORKERS_DEFAULT,
-             use_gpu=True, gpu_id=Config.GPU_ID_DEFAULT,
-             data_dir=Config.DATA_DIR_DEFAULT, n_data_samples=Config.NUM_SAMPLES, logr=None,
+             use_gpu=True, gpu_id=Config.GPU_ID_DEFAULT, logr=None,
+             data_dir=Config.DATA_DIR_DEFAULT, n_data_samples=Config.NUM_SAMPLES, cust_graph=False,
              folds=Config.FOLDS_DEFAULT, kid=Config.VALID_K_DEFAULT):
     # CUDA if needed
     device = torch.device('cuda:%d' % gpu_id if (use_gpu and torch.cuda.is_available()) else 'cpu')
@@ -215,8 +217,10 @@ def evaluate(model_path, bs=Config.BATCH_SIZE_DEFAULT, num_workers=Config.WORKER
         logr.log('> Model sent to {}\n'.format(device))
 
     # Load DataSet
-    logr.log('> Loading DataSet from {}\n'.format(data_dir))
-    dataset = EEGAgeDataSet(data_dir, n_samples=n_data_samples, folds=folds, valid_k=kid)
+    logr.log('> Loading DataSet from %s, given %d samples%s\n' %
+             (data_dir, n_data_samples, ', using a customized graph' if cust_graph else '')
+             )
+    dataset = EEGAgeDataSet(data_dir, n_samples=n_data_samples, cust_graph=cust_graph, folds=folds, valid_k=kid)
     validloader = GraphDataLoader(dataset.valid_set, batch_size=bs, shuffle=False, num_workers=num_workers)
     testloader = GraphDataLoader(dataset.test_set, batch_size=bs, shuffle=False, num_workers=num_workers)
     logr.log('> Validation batches: {}, Test batches: {}\n'.format(len(validloader), len(testloader)))
@@ -264,6 +268,7 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--folds', type=int, default=Config.FOLDS_DEFAULT, help='Number of folds, default = {}'.format(Config.FOLDS_DEFAULT))
     parser.add_argument('-k', '--k_id', type=int, default=Config.VALID_K_DEFAULT, help='Fold number k (index) used for validation, default = {}'.format(Config.VALID_K_DEFAULT))
     parser.add_argument('-nd', '--num_samples', type=int, default=Config.NUM_SAMPLES, help='Specify the number of samples to run, default = {}'.format(Config.NUM_SAMPLES))
+    parser.add_argument('-cg', '--customize_graph', type=int, default=Config.CUSTOMIZE_GRAPH, help='Specify whether to use a customized graph, default = {}'.format(Config.CUSTOMIZE_GRAPH))
 
     FLAGS, unparsed = parser.parse_known_args()
 
@@ -274,8 +279,8 @@ if __name__ == '__main__':
     if working_mode == 'train':
         train(lr=FLAGS.learning_rate, bs=FLAGS.batch_size, ep=FLAGS.max_epochs,
               eval_freq=FLAGS.eval_freq, opt=FLAGS.optimizer, num_workers=FLAGS.cores,
-              use_gpu=(FLAGS.gpu == 1), gpu_id=FLAGS.gpu_id,
-              data_dir=FLAGS.data_dir, n_data_samples=FLAGS.num_samples, logr=logger,
+              use_gpu=(FLAGS.gpu == 1), gpu_id=FLAGS.gpu_id, logr=logger,
+              data_dir=FLAGS.data_dir, n_data_samples=FLAGS.num_samples, cust_graph=(FLAGS.customize_graph == 1),
               model=FLAGS.network, model_save_dir=FLAGS.model_save_dir,
               loss_function=FLAGS.loss_function,
               feat_dim=FLAGS.feature_dim, hidden_dim=FLAGS.hidden_dim,
@@ -290,8 +295,8 @@ if __name__ == '__main__':
             exit(-1)
         # Normal
         evaluate(eval_file, bs=FLAGS.batch_size, num_workers=FLAGS.cores,
-                 use_gpu=(FLAGS.gpu == 1), gpu_id=FLAGS.gpu_id,
-                 data_dir=FLAGS.data_dir, n_data_samples=FLAGS.num_samples, logr=logger,
+                 use_gpu=(FLAGS.gpu == 1), gpu_id=FLAGS.gpu_id, logr=logger,
+                 data_dir=FLAGS.data_dir, n_data_samples=FLAGS.num_samples, cust_graph=(FLAGS.customize_graph == 1),
                  folds=FLAGS.folds, kid=FLAGS.k_id)
         logger.close()
     else:
