@@ -131,6 +131,9 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
             with torch.no_grad():
                 train_loss += loss.item()
                 train_metrics = aggMetricsWithMap(train_metrics, res, target)
+                del features
+                del target
+                del res
 
             if Config.TRAIN_JUST_ONE_BATCH:     # DEBUG
                 if i == 0:
@@ -164,6 +167,9 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
 
                     val_loss += val_loss.item()
                     val_metrics = aggMetricsWithMap(val_metrics, val_res, val_target)
+                    del val_features
+                    del val_target
+                    del val_res
 
                 val_loss /= len(validloader)
                 val_metrics = wrapMetricsWithMap(val_metrics, len(validloader))
@@ -196,6 +202,10 @@ def evalMetrics(dataloader: GraphDataLoader, device: torch.device, net):
 
         res = net(features)
         metrics = aggMetricsWithMap(metrics, res, target)
+        del features
+        del target
+        del res
+
     metrics = wrapMetricsWithMap(metrics, len(dataloader))
     return metrics
 
@@ -231,10 +241,14 @@ def evaluate(model_path, bs=Config.BATCH_SIZE_DEFAULT, num_workers=Config.WORKER
     # - Validation
     val_metrics = evalMetrics(validloader, device, net)
     logr.log('Validation: %s\n' % metricsMap2Str(val_metrics))
+    del validloader
+    del val_metrics
 
     # - Test
     test_metrics = evalMetrics(testloader, device, net)
     logr.log('Test: %s\n' % metricsMap2Str(test_metrics))
+    del testloader
+    del test_metrics
 
     # End Evaluation
     logr.log('> Evaluation finished.\n')
