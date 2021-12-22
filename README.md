@@ -118,9 +118,3 @@ The results of K-Fold Cross Validation are shown in Table 4.
 ![K-Fold](res/t5_kfold.png)
 
 <br>
-
-<style>
-    body {
-        text-align: justify;
-    }
-</style>
