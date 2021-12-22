@@ -82,7 +82,7 @@ The preprocessed EEG data contains 245760 timestamps (240s). The frequency is 10
 
 The implementation uses [PyTorch](https://pytorch.org/) and [DGL](https://www.dgl.ai/) and the experiments are run on *Tesla P100-PCIE-16GB*. The learning rate, total training epochs, batch size, hidden dimension, number of attention heads are specified as 0.01, 100, 5, 5 and 3 respectively. The selected optimizer is Adam and the loss function is SmoothL1Loss which is more resistant to noises than MSELoss. For StCNN, several stride values are tested (a stride factor - `stf` is specified, meaning to run over `1/stf` seconds each time. E.g., `stf4` specifies a stride value of 1024 / 4 = 256, which is 0.25s).
 
-We also perform K-Fold Cross Validation (5 folds) on our model (BAPM) with settings as `{s16, stf4}`.
+We also perform K-Fold Cross Validation (5 folds) on our model (BAPM) with settings as `s16-stf4`.
 
 <br>
 
@@ -92,7 +92,11 @@ The training loss curve of BAPM on the dataset with `{s16, stf4}` settings is sh
 
 ![loss curve](res/BAPM/20211221_20_58_10_BAPM_s16_train.png)
 
-The metrics results are shown in Table 1 and 2.
+The training loss rapidly descends in the first 5 epochs. Then, it steadily goes down until about 60 epochs. Afterwards, the model seems to converge and fluctuate around 7.5.
+
+The metrics results are shown in Table 1 and 2. From the two tables, BAPM outperforms the two comparison baseline models on all three metrics. BAPM-CG performs slightly worse than BAPM, indicating that our customized graph design may be inadequate to show the true relationships among the electrodes. For BAPM, the best MAE value 8 indicates the age prediction error. This result is, however, not the best value (which is around 4). The reason might be that the data is not enough for the model to fully discover certain pattern (overfitting is obvious in a `s4` setting).
+
+It can also be discovered that the results vary as the number of samples split from one subject increases. For MAE and RMSE, a sample split of 16 gives the best results while for MAPE, a sample split of 24 gives the best results. This is explainable, since as the sample split increases, the total number of samples increases, enabling the model to converge more stably without overfitting. On the other hand, the number of timestamps for each sample decreases, which might break certain pattern along the time dimension when the sample is too short. Considering that MAE is the most important metric we care about, we select `s16` as the best and default setting.
 
 <table>
     <tr>
@@ -105,15 +109,19 @@ The metrics results are shown in Table 1 and 2.
     </tr>
 </table>
 
-The TTpS (Training time per second) results are shown in Table 3.
+The TTpS (Training time per second) results are shown in Table 3. It can be discovered that the training time is not significantly longer than a simple feed-forward neural network, since StCNN largely reduces the dimension.
 
 ![TTpS](res/t3_TTpS.png)
 
-The results using different StCNN stride settings are shown in Table 4.
+The results using different StCNN stride settings are shown in Table 4. The results are best when the stride factor is 4 (MAE is not much worse than that of `s8`). Theoretically, there should also be a stride factor value between 1 and 1024 which provides the best results. However, our 16GB GPU has been overloaded when the value is over 8. As a result, we select `stf4` as the best and default setting.
 
 ![Stride](res/t4_stride.png)
 
-The results of K-Fold Cross Validation are shown in Table 4.
+The results of K-Fold Cross Validation for BAPM with settings as `s16-stf4` are shown in Table 4. It can be discovered that the results obtained by our model are relatively stable. The average values are as follow:
+
+-   MAE = `8.7286`;
+-   RMSE = `11.3910`;
+-   MAPE = `0.2759`.
 
 ![K-Fold](res/t5_kfold.png)
 
