@@ -39,7 +39,8 @@ if __name__ == '__main__':
     pack = torch.load('../data/EEG_age_data/1.pt')
     features = pack['V']
 
-    stCNN = StCNN(hidden_dim=Config.HIDDEN_DIM_DEFAULT, stride=Config.STCNN_STRIDE_DEFAULT)
+    stCNN = StCNN(feat_dim=features.shape[-1], hidden_dim=Config.HIDDEN_DIM_DEFAULT,
+                  stride=int(Config.EEG_FREQUENCY / Config.STCNN_STRIDE_FACTOR_DEFAULT))
 
     time0 = time.time()
     out = stCNN(features)

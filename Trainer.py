@@ -37,7 +37,7 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
           loss_function=Config.LOSS_FUNC_DEFAULT,
           feat_dim=Config.FEAT_DIM_DEFAULT, hidden_dim=Config.HIDDEN_DIM_DEFAULT,
           folds=Config.FOLDS_DEFAULT, kid=Config.VALID_K_DEFAULT,
-          sample_split=Config.SAMPLE_SPLIT_DEFAULT, stCNN_stride=Config.STCNN_STRIDE_DEFAULT):
+          sample_split=Config.SAMPLE_SPLIT_DEFAULT, stCNN_stride_factor=Config.STCNN_STRIDE_FACTOR_DEFAULT):
     # CUDA if possible
     device = torch.device('cuda:%d' % gpu_id if (use_gpu and torch.cuda.is_available()) else 'cpu')
     logr.log('> device: {}\n'.format(device))
@@ -52,6 +52,7 @@ def train(lr=Config.LEARNING_RATE_DEFAULT, bs=Config.BATCH_SIZE_DEFAULT, ep=Conf
     logr.log('> Training batches: {}, Validation batches: {}\n'.format(len(trainloader), len(validloader)))
 
     # Initialize the Model
+    stCNN_stride = int(Config.EEG_FREQUENCY / stCNN_stride_factor)
     net = BrainAgePredictionModel(feat_dim=feat_dim, hidden_dim=hidden_dim, num_nodes=Config.NUM_NODES, stCNN_stride=stCNN_stride, num_heads=Config.NUM_HEADS_DEFAULT)
     logr.log('> Initializing the Training Model: {}\n'.format(model))
     if model == 'FeedForward':
@@ -222,7 +223,7 @@ def evaluate(model_path, bs=Config.BATCH_SIZE_DEFAULT, num_workers=Config.WORKER
              use_gpu=True, gpu_id=Config.GPU_ID_DEFAULT, logr=None,
              data_dir=Config.DATA_DIR_DEFAULT, n_data_samples=Config.NUM_SAMPLES_DEFAULT, cust_graph=False,
              folds=Config.FOLDS_DEFAULT, kid=Config.VALID_K_DEFAULT,
-             sample_split=Config.SAMPLE_SPLIT_DEFAULT, stCNN_stride=Config.STCNN_STRIDE_DEFAULT):
+             sample_split=Config.SAMPLE_SPLIT_DEFAULT):
     # CUDA if needed
     device = torch.device('cuda:%d' % gpu_id if (use_gpu and torch.cuda.is_available()) else 'cpu')
     logr.log('> device: {}\n'.format(device))
@@ -299,7 +300,7 @@ if __name__ == '__main__':
 
     # For testing
     parser.add_argument('-s', '--sample_split', type=int, default=Config.SAMPLE_SPLIT_DEFAULT, help='Specify sample split in preprocessing (for testing), default = {}'.format(Config.SAMPLE_SPLIT_DEFAULT))
-    parser.add_argument('-sts', '--stcnn_stride', type=int, default=Config.STCNN_STRIDE_DEFAULT, help='Specify the stride for StCNN (for testing), default = {}'.format(Config.STCNN_STRIDE_DEFAULT))
+    parser.add_argument('-stf', '--stcnn_stride_factor', type=int, default=Config.STCNN_STRIDE_FACTOR_DEFAULT, help='Specify the stride factor for StCNN (for testing), default = {}'.format(Config.STCNN_STRIDE_FACTOR_DEFAULT))
 
     FLAGS, unparsed = parser.parse_known_args()
 
@@ -319,7 +320,7 @@ if __name__ == '__main__':
               loss_function=FLAGS.loss_function,
               feat_dim=FLAGS.feature_dim, hidden_dim=FLAGS.hidden_dim,
               folds=FLAGS.folds, kid=FLAGS.k_id,
-              sample_split=FLAGS.sample_split, stCNN_stride=FLAGS.stcnn_stride)
+              sample_split=FLAGS.sample_split, stCNN_stride_factor=FLAGS.stcnn_stride_factor)
         logger.close()
     elif working_mode == 'eval':
         eval_file = FLAGS.eval
@@ -333,7 +334,7 @@ if __name__ == '__main__':
                  use_gpu=(FLAGS.gpu == 1), gpu_id=FLAGS.gpu_id, logr=logger,
                  data_dir=FLAGS.data_dir, n_data_samples=num_samples, cust_graph=(FLAGS.customize_graph == 1),
                  folds=FLAGS.folds, kid=FLAGS.k_id,
-                 sample_split=FLAGS.sample_split, stCNN_stride=FLAGS.stcnn_stride)
+                 sample_split=FLAGS.sample_split)
         logger.close()
     else:
         sys.stderr.write('Please specify the working mode (train/eval)\n')
