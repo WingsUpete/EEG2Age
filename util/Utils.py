@@ -151,4 +151,4 @@ def plot_grad_flow(named_parameters):
 
 
 if __name__ == '__main__':
-    trainLog2LossCurve('log/xx.log')
+    trainLog2LossCurve('../res/variant/BAPM2/20211222_01_19_38_BAPM2_s16_train.log')
