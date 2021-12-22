@@ -1,0 +1,14 @@
+> device: cuda:2
+> Loading model_save/20211222_04_39_33.pth
+> Model Structure:
+GRUNet(
+  (linear_n): Linear(in_features=63, out_features=5, bias=True)
+  (linear_o): Linear(in_features=5, out_features=1, bias=True)
+  (gru): GRU(5, 5)
+)
+> Model sent to cuda:2
+> Loading DataSet from data/EEG_age_data_s16/, given 1776 samples
+> Validation batches: 52, Test batches: 64
+Validation: MAE = 11.9340, RMSE = 15.0122, MAPE = 0.3397
+Test: MAE = 11.5837, RMSE = 14.0128, MAPE = 0.3384
+> Evaluation finished.

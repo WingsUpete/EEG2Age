@@ -1,0 +1,173 @@
+> device: cuda:1
+> Loading DataSet from data/EEG_age_data_s16/, given 1776 samples
+> Training batches: 205, Validation batches: 52
+> Initializing the Training Model: BAPM
+> Model Structure:
+BrainAgePredictionModel(
+  (stCNN): StCNN(
+    (secGrabber): Conv1d(1, 5, kernel_size=(1024,), stride=(256,))
+    (bn): BatchNorm1d(5, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  )
+  (spatAttLayer): SpatAttLayer(
+    (GaANBlk): MultiHeadPwGaANLayer(
+      (pwGaAN): PwGaANLayer(
+        (Wa): Linear(in_features=5, out_features=5, bias=False)
+        (att_out_fc_l): Linear(in_features=5, out_features=1, bias=False)
+        (att_out_fc_r): Linear(in_features=5, out_features=1, bias=False)
+        (gate_fc_l): Linear(in_features=5, out_features=1, bias=False)
+        (gate_fc_m): Linear(in_features=5, out_features=1, bias=False)
+        (gate_fc_r): Linear(in_features=5, out_features=1, bias=False)
+        (Wg): Linear(in_features=5, out_features=5, bias=False)
+      )
+    )
+    (proj_fc): Linear(in_features=5, out_features=5, bias=False)
+    (bn): BatchNorm2d(10, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  )
+  (tempLayer): TempLayer(
+    (gru): GRU(10, 10)
+    (bn): BatchNorm1d(10, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  )
+  (tranLayer): TranLayer(
+    (linear_nodes): Linear(in_features=63, out_features=1, bias=True)
+    (linear_embed): Linear(in_features=10, out_features=1, bias=True)
+  )
+)
+> Model sent to cuda:1
+> Using SmoothL1Loss as the Loss Function.
+> Constructing the Optimizer: ADAM
+
+learning_rate = 0.01, epochs = 100, num_workers = 50
+eval_freq = 5, batch_size = 5, optimizer = ADAM
+folds = 5, valid_fold_id = 3
+
+Start Training!
+------------------------------------------------------------------------
+Training Round 1: loss = 15.718050, time_cost = 23.0156 sec (0.0225 sec per sample), MAE = 16.2097, RMSE = 21.2310, MAPE = 0.4369
+Training Round 2: loss = 11.288920, time_cost = 24.0794 sec (0.0235 sec per sample), MAE = 11.7785, RMSE = 14.7333, MAPE = 0.3414
+Training Round 3: loss = 11.061532, time_cost = 23.2579 sec (0.0227 sec per sample), MAE = 11.5511, RMSE = 14.3716, MAPE = 0.3334
+Training Round 4: loss = 11.314050, time_cost = 22.9913 sec (0.0225 sec per sample), MAE = 11.8068, RMSE = 14.7775, MAPE = 0.3404
+Training Round 5: loss = 10.994238, time_cost = 23.4304 sec (0.0229 sec per sample), MAE = 11.4855, RMSE = 14.3132, MAPE = 0.3337
+!!! Validation: loss = 14.163760, MAE = 14.6582, RMSE = 18.8048, MAPE = 0.3301
+Training Round 6: loss = 10.865019, time_cost = 22.7304 sec (0.0222 sec per sample), MAE = 11.3593, RMSE = 14.1470, MAPE = 0.3284
+Training Round 7: loss = 10.558274, time_cost = 22.8662 sec (0.0223 sec per sample), MAE = 11.0485, RMSE = 13.7714, MAPE = 0.3214
+Training Round 8: loss = 10.483008, time_cost = 23.6459 sec (0.0231 sec per sample), MAE = 10.9738, RMSE = 13.7333, MAPE = 0.3179
+Training Round 9: loss = 10.126700, time_cost = 23.0393 sec (0.0225 sec per sample), MAE = 10.6152, RMSE = 13.2328, MAPE = 0.3109
+Training Round 10: loss = 10.071535, time_cost = 23.3644 sec (0.0228 sec per sample), MAE = 10.5633, RMSE = 13.2421, MAPE = 0.3136
+!!! Validation: loss = 10.070870, MAE = 10.5637, RMSE = 13.5598, MAPE = 0.2864
+Training Round 11: loss = 9.554849, time_cost = 23.2272 sec (0.0227 sec per sample), MAE = 10.0425, RMSE = 12.6769, MAPE = 0.2978
+Training Round 12: loss = 9.832192, time_cost = 22.2259 sec (0.0217 sec per sample), MAE = 10.3213, RMSE = 12.9684, MAPE = 0.3101
+Training Round 13: loss = 10.057974, time_cost = 22.4330 sec (0.0219 sec per sample), MAE = 10.5488, RMSE = 13.3674, MAPE = 0.3118
+Training Round 14: loss = 9.778977, time_cost = 23.7907 sec (0.0232 sec per sample), MAE = 10.2683, RMSE = 13.0304, MAPE = 0.3015
+Training Round 15: loss = 9.375175, time_cost = 22.1439 sec (0.0216 sec per sample), MAE = 9.8627, RMSE = 12.5216, MAPE = 0.2900
+!!! Validation: loss = 10.360796, MAE = 10.8484, RMSE = 13.7960, MAPE = 0.2738
+Model: model_save/20211222_04_39_02.pth has been saved since it achieves smaller loss.
+Training Round 16: loss = 9.320208, time_cost = 23.2071 sec (0.0227 sec per sample), MAE = 9.8067, RMSE = 12.5450, MAPE = 0.2903
+Training Round 17: loss = 9.117906, time_cost = 23.6699 sec (0.0231 sec per sample), MAE = 9.6057, RMSE = 12.3430, MAPE = 0.2879
+Training Round 18: loss = 9.204606, time_cost = 23.1272 sec (0.0226 sec per sample), MAE = 9.6952, RMSE = 12.2691, MAPE = 0.2830
+Training Round 19: loss = 9.247483, time_cost = 22.7475 sec (0.0222 sec per sample), MAE = 9.7382, RMSE = 12.4921, MAPE = 0.2887
+Training Round 20: loss = 8.891296, time_cost = 24.3409 sec (0.0238 sec per sample), MAE = 9.3803, RMSE = 11.8936, MAPE = 0.2761
+!!! Validation: loss = 10.333409, MAE = 10.8252, RMSE = 13.4142, MAPE = 0.3286
+Model: model_save/20211222_04_39_02.pth has been saved since it achieves smaller loss.
+Training Round 21: loss = 9.174071, time_cost = 22.6804 sec (0.0221 sec per sample), MAE = 9.6621, RMSE = 12.4259, MAPE = 0.2859
+Training Round 22: loss = 9.092294, time_cost = 21.9816 sec (0.0215 sec per sample), MAE = 9.5797, RMSE = 12.2781, MAPE = 0.2854
+Training Round 23: loss = 8.866899, time_cost = 24.4050 sec (0.0238 sec per sample), MAE = 9.3523, RMSE = 12.0456, MAPE = 0.2789
+Training Round 24: loss = 9.015235, time_cost = 23.3071 sec (0.0228 sec per sample), MAE = 9.5028, RMSE = 12.3104, MAPE = 0.2835
+Training Round 25: loss = 8.816625, time_cost = 22.8996 sec (0.0224 sec per sample), MAE = 9.3016, RMSE = 11.7958, MAPE = 0.2772
+!!! Validation: loss = 9.387090, MAE = 9.8660, RMSE = 12.5234, MAPE = 0.2866
+Model: model_save/20211222_04_39_02.pth has been saved since it achieves smaller loss.
+Training Round 26: loss = 8.740998, time_cost = 22.8410 sec (0.0223 sec per sample), MAE = 9.2299, RMSE = 11.6331, MAPE = 0.2731
+Training Round 27: loss = 8.806217, time_cost = 23.0759 sec (0.0225 sec per sample), MAE = 9.2955, RMSE = 11.7271, MAPE = 0.2796
+Training Round 28: loss = 8.795924, time_cost = 22.7355 sec (0.0222 sec per sample), MAE = 9.2841, RMSE = 12.0086, MAPE = 0.2721
+Training Round 29: loss = 9.122627, time_cost = 24.7109 sec (0.0241 sec per sample), MAE = 9.6104, RMSE = 12.1250, MAPE = 0.2849
+Training Round 30: loss = 8.608727, time_cost = 22.9505 sec (0.0224 sec per sample), MAE = 9.0976, RMSE = 11.5746, MAPE = 0.2729
+!!! Validation: loss = 9.705571, MAE = 10.1978, RMSE = 13.1717, MAPE = 0.2711
+Training Round 31: loss = 8.742846, time_cost = 22.5085 sec (0.0220 sec per sample), MAE = 9.2295, RMSE = 11.8344, MAPE = 0.2745
+Training Round 32: loss = 8.556470, time_cost = 23.5534 sec (0.0230 sec per sample), MAE = 9.0414, RMSE = 11.7454, MAPE = 0.2661
+Training Round 33: loss = 8.648181, time_cost = 23.0404 sec (0.0225 sec per sample), MAE = 9.1353, RMSE = 11.8702, MAPE = 0.2725
+Training Round 34: loss = 8.494016, time_cost = 23.5210 sec (0.0230 sec per sample), MAE = 8.9837, RMSE = 11.6553, MAPE = 0.2649
+Training Round 35: loss = 8.710416, time_cost = 23.7242 sec (0.0232 sec per sample), MAE = 9.1975, RMSE = 11.8265, MAPE = 0.2751
+!!! Validation: loss = 10.455869, MAE = 10.9490, RMSE = 13.4355, MAPE = 0.3445
+Training Round 36: loss = 8.300290, time_cost = 23.2423 sec (0.0227 sec per sample), MAE = 8.7857, RMSE = 11.3574, MAPE = 0.2636
+Training Round 37: loss = 8.342222, time_cost = 23.0904 sec (0.0225 sec per sample), MAE = 8.8297, RMSE = 11.4089, MAPE = 0.2639
+Training Round 38: loss = 8.267812, time_cost = 23.6368 sec (0.0231 sec per sample), MAE = 8.7567, RMSE = 11.2816, MAPE = 0.2579
+Training Round 39: loss = 8.237790, time_cost = 22.4433 sec (0.0219 sec per sample), MAE = 8.7241, RMSE = 11.2245, MAPE = 0.2571
+Training Round 40: loss = 8.475685, time_cost = 22.8883 sec (0.0224 sec per sample), MAE = 8.9642, RMSE = 11.6821, MAPE = 0.2676
+!!! Validation: loss = 9.010040, MAE = 9.4986, RMSE = 11.6862, MAPE = 0.2814
+Model: model_save/20211222_04_39_02.pth has been saved since it achieves smaller loss.
+Training Round 41: loss = 8.323935, time_cost = 23.5327 sec (0.0230 sec per sample), MAE = 8.8128, RMSE = 11.3983, MAPE = 0.2630
+Training Round 42: loss = 8.128004, time_cost = 23.1241 sec (0.0226 sec per sample), MAE = 8.6119, RMSE = 11.3291, MAPE = 0.2559
+Training Round 43: loss = 7.808185, time_cost = 22.8929 sec (0.0224 sec per sample), MAE = 8.2917, RMSE = 10.9379, MAPE = 0.2398
+Training Round 44: loss = 8.106623, time_cost = 23.9080 sec (0.0233 sec per sample), MAE = 8.5923, RMSE = 11.0813, MAPE = 0.2574
+Training Round 45: loss = 8.027388, time_cost = 22.6169 sec (0.0221 sec per sample), MAE = 8.5170, RMSE = 11.2280, MAPE = 0.2510
+!!! Validation: loss = 10.012416, MAE = 10.4992, RMSE = 14.0898, MAPE = 0.2473
+Training Round 46: loss = 7.960747, time_cost = 22.2427 sec (0.0217 sec per sample), MAE = 8.4483, RMSE = 11.0992, MAPE = 0.2484
+Training Round 47: loss = 8.166972, time_cost = 23.7058 sec (0.0232 sec per sample), MAE = 8.6528, RMSE = 11.4302, MAPE = 0.2536
+Training Round 48: loss = 8.117453, time_cost = 23.5960 sec (0.0230 sec per sample), MAE = 8.6049, RMSE = 11.3769, MAPE = 0.2569
+Training Round 49: loss = 8.300935, time_cost = 24.2016 sec (0.0236 sec per sample), MAE = 8.7854, RMSE = 11.4364, MAPE = 0.2563
+Training Round 50: loss = 8.072906, time_cost = 24.3301 sec (0.0238 sec per sample), MAE = 8.5576, RMSE = 11.1670, MAPE = 0.2489
+!!! Validation: loss = 10.499698, MAE = 10.9953, RMSE = 13.4944, MAPE = 0.3401
+Training Round 51: loss = 8.022912, time_cost = 23.0729 sec (0.0225 sec per sample), MAE = 8.5102, RMSE = 11.0558, MAPE = 0.2491
+Training Round 52: loss = 7.898722, time_cost = 22.4992 sec (0.0220 sec per sample), MAE = 8.3843, RMSE = 11.0421, MAPE = 0.2454
+Training Round 53: loss = 8.067797, time_cost = 23.4217 sec (0.0229 sec per sample), MAE = 8.5514, RMSE = 11.3567, MAPE = 0.2519
+Training Round 54: loss = 8.028802, time_cost = 23.3625 sec (0.0228 sec per sample), MAE = 8.5184, RMSE = 11.1324, MAPE = 0.2506
+Training Round 55: loss = 8.048801, time_cost = 23.1546 sec (0.0226 sec per sample), MAE = 8.5345, RMSE = 11.2757, MAPE = 0.2515
+!!! Validation: loss = 8.728986, MAE = 9.2129, RMSE = 12.2187, MAPE = 0.2392
+Model: model_save/20211222_04_39_02.pth has been saved since it achieves smaller loss.
+Training Round 56: loss = 7.988342, time_cost = 22.4930 sec (0.0220 sec per sample), MAE = 8.4722, RMSE = 11.2117, MAPE = 0.2516
+Training Round 57: loss = 7.958305, time_cost = 23.3419 sec (0.0228 sec per sample), MAE = 8.4456, RMSE = 11.0752, MAPE = 0.2512
+Training Round 58: loss = 7.704290, time_cost = 23.3398 sec (0.0228 sec per sample), MAE = 8.1877, RMSE = 10.8729, MAPE = 0.2420
+Training Round 59: loss = 7.718990, time_cost = 24.7304 sec (0.0242 sec per sample), MAE = 8.1997, RMSE = 10.9230, MAPE = 0.2363
+Training Round 60: loss = 7.984751, time_cost = 23.4203 sec (0.0229 sec per sample), MAE = 8.4699, RMSE = 11.2572, MAPE = 0.2494
+!!! Validation: loss = 9.319706, MAE = 9.8058, RMSE = 13.1043, MAPE = 0.2554
+Training Round 61: loss = 7.770338, time_cost = 23.2337 sec (0.0227 sec per sample), MAE = 8.2547, RMSE = 11.0842, MAPE = 0.2411
+Training Round 62: loss = 7.956506, time_cost = 24.5330 sec (0.0240 sec per sample), MAE = 8.4401, RMSE = 11.1158, MAPE = 0.2435
+Training Round 63: loss = 7.903232, time_cost = 23.6692 sec (0.0231 sec per sample), MAE = 8.3913, RMSE = 11.0724, MAPE = 0.2518
+Training Round 64: loss = 7.707003, time_cost = 23.6663 sec (0.0231 sec per sample), MAE = 8.1925, RMSE = 10.7618, MAPE = 0.2439
+Training Round 65: loss = 7.792280, time_cost = 24.0574 sec (0.0235 sec per sample), MAE = 8.2786, RMSE = 11.0350, MAPE = 0.2475
+!!! Validation: loss = 11.405016, MAE = 11.9024, RMSE = 15.5242, MAPE = 0.2708
+Training Round 66: loss = 7.690965, time_cost = 23.0197 sec (0.0225 sec per sample), MAE = 8.1734, RMSE = 10.8738, MAPE = 0.2411
+Training Round 67: loss = 7.914989, time_cost = 22.9564 sec (0.0224 sec per sample), MAE = 8.3991, RMSE = 11.1181, MAPE = 0.2489
+Training Round 68: loss = 8.040111, time_cost = 23.2015 sec (0.0227 sec per sample), MAE = 8.5258, RMSE = 11.0174, MAPE = 0.2492
+Training Round 69: loss = 7.796183, time_cost = 23.9839 sec (0.0234 sec per sample), MAE = 8.2829, RMSE = 10.9586, MAPE = 0.2431
+Training Round 70: loss = 7.689207, time_cost = 24.1310 sec (0.0236 sec per sample), MAE = 8.1732, RMSE = 10.9563, MAPE = 0.2405
+!!! Validation: loss = 8.419968, MAE = 8.9051, RMSE = 11.6806, MAPE = 0.2446
+Model: model_save/20211222_04_39_02.pth has been saved since it achieves smaller loss.
+Training Round 71: loss = 7.708280, time_cost = 23.9192 sec (0.0234 sec per sample), MAE = 8.1928, RMSE = 10.9514, MAPE = 0.2378
+Training Round 72: loss = 7.812974, time_cost = 23.1377 sec (0.0226 sec per sample), MAE = 8.2997, RMSE = 10.8735, MAPE = 0.2484
+Training Round 73: loss = 7.585729, time_cost = 23.7941 sec (0.0232 sec per sample), MAE = 8.0729, RMSE = 10.7827, MAPE = 0.2383
+Training Round 74: loss = 7.544649, time_cost = 21.7465 sec (0.0212 sec per sample), MAE = 8.0275, RMSE = 10.6448, MAPE = 0.2385
+Training Round 75: loss = 7.606377, time_cost = 23.1785 sec (0.0226 sec per sample), MAE = 8.0933, RMSE = 10.7186, MAPE = 0.2379
+!!! Validation: loss = 8.917997, MAE = 9.4088, RMSE = 11.8525, MAPE = 0.2723
+Training Round 76: loss = 7.755748, time_cost = 23.3214 sec (0.0228 sec per sample), MAE = 8.2399, RMSE = 10.8984, MAPE = 0.2433
+Training Round 77: loss = 7.493200, time_cost = 24.2853 sec (0.0237 sec per sample), MAE = 7.9776, RMSE = 10.6862, MAPE = 0.2308
+Training Round 78: loss = 7.597647, time_cost = 22.6397 sec (0.0221 sec per sample), MAE = 8.0826, RMSE = 10.9271, MAPE = 0.2370
+Training Round 79: loss = 7.574615, time_cost = 22.0850 sec (0.0216 sec per sample), MAE = 8.0590, RMSE = 10.6444, MAPE = 0.2349
+Training Round 80: loss = 7.440940, time_cost = 23.4537 sec (0.0229 sec per sample), MAE = 7.9234, RMSE = 10.5067, MAPE = 0.2365
+!!! Validation: loss = 8.343293, MAE = 8.8267, RMSE = 11.6540, MAPE = 0.2619
+Model: model_save/20211222_04_39_02.pth has been saved since it achieves smaller loss.
+Training Round 81: loss = 7.661709, time_cost = 22.3536 sec (0.0218 sec per sample), MAE = 8.1487, RMSE = 10.6383, MAPE = 0.2405
+Training Round 82: loss = 7.394159, time_cost = 22.9024 sec (0.0224 sec per sample), MAE = 7.8807, RMSE = 10.5430, MAPE = 0.2300
+Training Round 83: loss = 7.671099, time_cost = 22.0549 sec (0.0215 sec per sample), MAE = 8.1604, RMSE = 10.7711, MAPE = 0.2395
+Training Round 84: loss = 7.458415, time_cost = 22.6199 sec (0.0221 sec per sample), MAE = 7.9411, RMSE = 10.5382, MAPE = 0.2326
+Training Round 85: loss = 7.588147, time_cost = 21.6005 sec (0.0211 sec per sample), MAE = 8.0706, RMSE = 10.5659, MAPE = 0.2392
+!!! Validation: loss = 8.489173, MAE = 8.9763, RMSE = 11.6490, MAPE = 0.2423
+Training Round 86: loss = 7.405871, time_cost = 22.7517 sec (0.0222 sec per sample), MAE = 7.8887, RMSE = 10.4847, MAPE = 0.2333
+Training Round 87: loss = 7.388672, time_cost = 22.9868 sec (0.0224 sec per sample), MAE = 7.8713, RMSE = 10.5925, MAPE = 0.2295
+Training Round 88: loss = 7.252985, time_cost = 23.6125 sec (0.0231 sec per sample), MAE = 7.7314, RMSE = 10.6155, MAPE = 0.2285
+Training Round 89: loss = 7.224738, time_cost = 22.8951 sec (0.0224 sec per sample), MAE = 7.7085, RMSE = 10.5282, MAPE = 0.2275
+Training Round 90: loss = 7.527689, time_cost = 22.8412 sec (0.0223 sec per sample), MAE = 8.0088, RMSE = 10.7767, MAPE = 0.2371
+!!! Validation: loss = 8.203014, MAE = 8.6936, RMSE = 11.2997, MAPE = 0.2626
+Model: model_save/20211222_04_39_02.pth has been saved since it achieves smaller loss.
+Training Round 91: loss = 7.389303, time_cost = 24.0705 sec (0.0235 sec per sample), MAE = 7.8765, RMSE = 10.3892, MAPE = 0.2307
+Training Round 92: loss = 7.446402, time_cost = 23.8256 sec (0.0233 sec per sample), MAE = 7.9285, RMSE = 10.6718, MAPE = 0.2349
+Training Round 93: loss = 7.522031, time_cost = 23.0129 sec (0.0225 sec per sample), MAE = 8.0099, RMSE = 10.3750, MAPE = 0.2364
+Training Round 94: loss = 7.313860, time_cost = 22.2491 sec (0.0217 sec per sample), MAE = 7.8021, RMSE = 10.4498, MAPE = 0.2318
+Training Round 95: loss = 7.459644, time_cost = 22.6935 sec (0.0222 sec per sample), MAE = 7.9394, RMSE = 10.7185, MAPE = 0.2323
+!!! Validation: loss = 8.374656, MAE = 8.8548, RMSE = 11.8368, MAPE = 0.2305
+Training Round 96: loss = 7.491449, time_cost = 21.4128 sec (0.0209 sec per sample), MAE = 7.9734, RMSE = 10.7095, MAPE = 0.2343
+Training Round 97: loss = 7.400829, time_cost = 24.3141 sec (0.0237 sec per sample), MAE = 7.8855, RMSE = 10.5391, MAPE = 0.2317
+Training Round 98: loss = 7.061047, time_cost = 22.6854 sec (0.0222 sec per sample), MAE = 7.5372, RMSE = 10.2784, MAPE = 0.2205
+Training Round 99: loss = 7.677563, time_cost = 22.9459 sec (0.0224 sec per sample), MAE = 8.1618, RMSE = 10.8919, MAPE = 0.2363
+Training Round 100: loss = 7.615336, time_cost = 23.0767 sec (0.0225 sec per sample), MAE = 8.0988, RMSE = 10.8413, MAPE = 0.2356
+!!! Validation: loss = 8.826039, MAE = 9.3113, RMSE = 12.3750, MAPE = 0.2509
+> Training finished.

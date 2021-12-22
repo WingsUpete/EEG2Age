@@ -1,0 +1,35 @@
+> device: cuda:2
+> Loading model_save/20211222_01_19_38.pth
+> Model Structure:
+BAPM2(
+  (stCNN): StCNN(
+    (secGrabber): Conv1d(1, 5, kernel_size=(1024,), stride=(256,))
+    (bn): BatchNorm1d(5, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  )
+  (spatAttLayer): SpatAttLayer(
+    (GaANBlk): MultiHeadPwGaANLayer(
+      (pwGaAN): PwGaANLayer(
+        (Wa): Linear(in_features=5, out_features=5, bias=False)
+        (att_out_fc_l): Linear(in_features=5, out_features=1, bias=False)
+        (att_out_fc_r): Linear(in_features=5, out_features=1, bias=False)
+        (gate_fc_l): Linear(in_features=5, out_features=1, bias=False)
+        (gate_fc_m): Linear(in_features=5, out_features=1, bias=False)
+        (gate_fc_r): Linear(in_features=5, out_features=1, bias=False)
+        (Wg): Linear(in_features=5, out_features=5, bias=False)
+      )
+    )
+    (proj_fc): Linear(in_features=5, out_features=5, bias=False)
+    (bn): BatchNorm2d(10, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  )
+  (linear_time): Linear(in_features=57, out_features=1, bias=True)
+  (tranLayer): TranLayer(
+    (linear_nodes): Linear(in_features=63, out_features=1, bias=True)
+    (linear_embed): Linear(in_features=10, out_features=1, bias=True)
+  )
+)
+> Model sent to cuda:2
+> Loading DataSet from data/EEG_age_data_s16/, given 1776 samples
+> Validation batches: 52, Test batches: 64
+Validation: MAE = 11.2854, RMSE = 14.5056, MAPE = 0.3121
+Test: MAE = 11.1898, RMSE = 14.0586, MAPE = 0.3140
+> Evaluation finished.

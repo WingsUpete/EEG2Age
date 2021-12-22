@@ -1,0 +1,13 @@
+> device: cuda:1
+> Loading model_save/20211222_06_02_41.pth
+> Model Structure:
+FeedForward(
+  (linear_n): Linear(in_features=63, out_features=1, bias=True)
+  (linear_t): Linear(in_features=15360, out_features=1, bias=True)
+)
+> Model sent to cuda:1
+> Loading DataSet from data/EEG_age_data_s16/, given 1776 samples
+> Validation batches: 52, Test batches: 64
+Validation: MAE = 37.4077, RMSE = 40.1782, MAPE = 1.0000
+Test: MAE = 37.1000, RMSE = 39.5578, MAPE = 1.0000
+> Evaluation finished.

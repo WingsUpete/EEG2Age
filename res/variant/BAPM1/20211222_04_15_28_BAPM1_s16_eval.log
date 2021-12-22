@@ -1,0 +1,20 @@
+> device: cuda:2
+> Loading model_save/20211222_00_58_29.pth
+> Model Structure:
+BAPM1(
+  (stCNN): StCNN(
+    (secGrabber): Conv1d(1, 5, kernel_size=(1024,), stride=(256,))
+    (bn): BatchNorm1d(5, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  )
+  (linear_time): Linear(in_features=57, out_features=1, bias=True)
+  (tranLayer): TranLayer(
+    (linear_nodes): Linear(in_features=63, out_features=1, bias=True)
+    (linear_embed): Linear(in_features=5, out_features=1, bias=True)
+  )
+)
+> Model sent to cuda:2
+> Loading DataSet from data/EEG_age_data_s16/, given 1776 samples
+> Validation batches: 52, Test batches: 64
+Validation: MAE = 12.3188, RMSE = 16.0444, MAPE = 0.3405
+Test: MAE = 11.4550, RMSE = 14.3746, MAPE = 0.3191
+> Evaluation finished.

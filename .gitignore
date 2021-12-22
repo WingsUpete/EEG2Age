@@ -56,7 +56,6 @@ coverage.xml
 *.pot
 
 # Django stuff:
-*.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
@@ -142,3 +141,6 @@ model_save/
 
 # Bash
 run_trainer.sh
+
+# Log
+log/
