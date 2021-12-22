@@ -21,6 +21,8 @@ The data is recorded with a BioSemi ActiveTwo system, using 64 electrodes follow
 
 ### Our Model - BAPM
 
+![BAPM](res/BAPM.png)
+
 **Brain Age Prediction Model (BAPM)** is a model composed of four layers, namely:
 
 1.   **StCNN (Short-term temporal convolutional layer)**: a 1-dimensional convolutional layer which aggregates groups of timestamps along the time dimension. It aims to extracts short-term patterns from the preprocessed EEG signals. Meanwhile, the layer effectively reduces the data size during the training process.
