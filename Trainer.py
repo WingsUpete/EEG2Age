@@ -240,7 +240,7 @@ def evaluate(model_path, bs=Config.BATCH_SIZE_DEFAULT, num_workers=Config.WORKER
     logr.log('> Loading DataSet from %s, given %d samples%s\n' %
              (data_dir, n_data_samples, ', using a customized graph' if cust_graph else '')
              )
-    logr.log('folds = {}, valid_fold_id = {}\n'.format(folds, kid))
+    logr.log('> folds = {}, valid_fold_id = {}\n'.format(folds, kid))
     dataset = EEGAgeDataSet(data_dir, n_samples=n_data_samples, sample_split=sample_split, cust_graph=cust_graph, folds=folds, valid_k=kid)
     validloader = GraphDataLoader(dataset.valid_set, batch_size=bs, shuffle=False, num_workers=num_workers)
     testloader = GraphDataLoader(dataset.test_set, batch_size=bs, shuffle=False, num_workers=num_workers)
