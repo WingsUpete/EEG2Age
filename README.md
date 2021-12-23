@@ -90,13 +90,15 @@ We also perform K-Fold Cross Validation (5 folds) on our model (BAPM) with setti
 
 ### Results
 
-The training loss curve of BAPM on the dataset with `{s16, stf4}` settings is shown below:
+The training loss curve of BAPM on the dataset with `s16-stf4` settings is shown below:
 
 ![loss curve](res/BAPM/20211221_20_58_10_BAPM_s16_train.png)
 
 The training loss rapidly descends in the first 5 epochs. Then, it steadily goes down until about 60 epochs. Afterwards, the model seems to converge and fluctuate around 7.5.
 
-The metrics results are shown in Table 1 and 2. From the two tables, BAPM outperforms the two comparison baseline models on all three metrics. BAPM-CG performs slightly worse than BAPM, indicating that our customized graph design may be inadequate to show the true relationships among the electrodes. For BAPM, the best MAE value 8 indicates the age prediction error. This result is, however, not the best value (which is around 4). The reason might be that the data is not enough for the model to fully discover certain pattern (overfitting is obvious in a `s4` setting).
+The metrics results are shown in Table 1 and 2. From the two tables, BAPM outperforms the two comparison baseline models on all three metrics. BAPM-CG performs slightly worse than BAPM, indicating that our customized graph design may be inadequate to show the true relationships among the electrodes. The results of BAPM-1 and BAPM-2 prove the importance of performing both spatial and temporal feature extractions. When we gradually add back the modules, the results improve step by step. The performance largely increases as soon as both spatial and temporal feature extraction layers are recovered.
+
+For BAPM, the best MAE value 8 indicates the age prediction error. This result is, however, not the best value (which is around 4). The reason might be that the data is not enough for the model to fully discover certain pattern (overfitting is obvious in a `s4` setting).
 
 It can also be discovered that the results vary as the number of samples split from one subject increases. For MAE and RMSE, a sample split of 16 gives the best results while for MAPE, a sample split of 24 gives the best results. This is explainable, since as the sample split increases, the total number of samples increases, enabling the model to converge more stably without overfitting. On the other hand, the number of timestamps for each sample decreases, which might break certain pattern along the time dimension when the sample is too short. Considering that MAE is the most important metric we care about, we select `s16` as the best and default setting.
 
